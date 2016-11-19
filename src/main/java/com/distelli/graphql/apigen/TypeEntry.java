@@ -1,0 +1,92 @@
+package com.distelli.graphql.apigen;
+
+import java.nio.file.Path;
+import java.util.Collections;
+import graphql.language.ObjectTypeDefinition;
+import graphql.language.TypeDefinition;
+import graphql.language.Argument;
+import graphql.language.Directive;
+import graphql.language.InterfaceTypeDefinition;
+import graphql.language.EnumTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
+import graphql.language.UnionTypeDefinition;
+import graphql.language.InputObjectTypeDefinition;
+import graphql.language.SchemaDefinition;
+import graphql.Scalars;
+import java.util.List;
+
+public class TypeEntry {
+    private Path source;
+    private TypeDefinition typeDefinition;
+    private String packageName;
+
+    public TypeEntry(TypeDefinition typeDefinition, Path source) {
+        this.source = source;
+        this.typeDefinition = typeDefinition;
+        this.packageName = getPackageName(getDirectives(typeDefinition));
+    }
+
+    public Path getSource() {
+        return source;
+    }
+
+    // Return nice formatted string for source location:
+    public String getSourceLocation() {
+        return source + ":[" + typeDefinition.getSourceLocation().getLine() +
+            ", " + typeDefinition.getSourceLocation().getColumn() + "]";
+    }
+
+    public boolean isObjectTypeDefinition() {
+        return typeDefinition instanceof ObjectTypeDefinition;
+    }
+
+    public ObjectTypeDefinition getObjectTypeDefinition() {
+        return (ObjectTypeDefinition)typeDefinition;
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public String getName() {
+        return typeDefinition.getName();
+    }
+
+    public TypeDefinition getTypeDefinition() {
+        return typeDefinition;
+    }
+
+    private static List<Directive> getDirectives(TypeDefinition def) {
+        if ( def instanceof ObjectTypeDefinition ) {
+            return ((ObjectTypeDefinition)def).getDirectives();
+        } if ( def instanceof InterfaceTypeDefinition ) {
+            return ((InterfaceTypeDefinition)def).getDirectives();
+        } if ( def instanceof EnumTypeDefinition ) {
+            return ((EnumTypeDefinition)def).getDirectives();
+        } if ( def instanceof ScalarTypeDefinition ) {
+            return ((ScalarTypeDefinition)def).getDirectives();
+        } if ( def instanceof UnionTypeDefinition ) {
+            return ((UnionTypeDefinition)def).getDirectives();
+        } if ( def instanceof InputObjectTypeDefinition ) {
+            return ((InputObjectTypeDefinition)def).getDirectives();
+        } if ( def instanceof SchemaDefinition ) {
+            return ((SchemaDefinition)def).getDirectives();
+        }
+        return Collections.emptyList();
+    }
+
+    private static String getPackageName(List<Directive> directives) {
+        String packageName = null;
+        for ( Directive directive : directives ) {
+            if ( ! "java".equals(directive.getName()) ) continue;
+            for ( Argument arg : directive.getArguments() ) {
+                if ( ! "package".equals(arg.getName()) ) continue;
+                packageName = (String)Scalars.GraphQLString.getCoercing().parseLiteral(arg.getValue());
+                break;
+            }
+            break;
+        }
+        return ( null == packageName ) ? "com.graphql.generated" : packageName;
+    }
+
+}

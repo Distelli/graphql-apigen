@@ -1,0 +1,83 @@
+// See https://github.com/antlr/stringtemplate4/blob/master/doc/groups.md
+group apigen;
+
+//////////////////////////////////////////////////////////////////////
+pojoFileName(model) ::= "<model.name>.java"
+pojoGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+<if(model.idField)>
+import java.util.List;
+<endif>
+
+public interface <model.name> {
+    public static class Builder {
+<model.fields:{ it |
+
+        private <it.type> _<it.name>;}>
+<model.fields:{ it |
+
+        public Builder with<it.ucname>(<it.type> _<it.name>) {
+            this._<it.name> = _<it.name>;
+            return this;
+        \}}>
+        public <model.name> build() {
+            return new Impl(this);
+        }
+    }
+    public static class Impl implements <model.name> {
+<model.fields:{ it |
+
+        private <it.type> _<it.name>;}>
+        private Impl(Builder builder) {
+<model.fields:{ it |
+
+            this._<it.name> = builder._<it.name>;}>
+        }
+<model.fields:{ it |
+
+        @Override
+        public <it.type> get<it.ucname>() {
+            return _<it.name>;
+        \}}>
+        @Override
+        public String toString() {
+            return "<model.name>{"
+                 + "<first(model.fields).name>=" + _<first(model.fields).name>
+<rest(model.fields):{ it |
+
+                 + ", <it.name>=" + _<it.name>}>
+                 + "}";
+        }
+        // TODO: equals(Object) & hashCode()
+    }
+<if(model.idField)>
+    public static class Unresolved implements <model.name> {
+        private <model.idField.type> _id;
+        public Unresolved(<model.idField.type> id) {
+            this._id = id;
+        }
+        @Override
+        public <model.idField.type> getId() {
+            return _id;
+        }
+        @Override
+        public String toString() {
+            return "<model.name>.Unresolved{"
+                 + "id=" + _id
+                 + "}";
+    }
+    public static interface Resolver {
+        public List\<<model.name>\> resolve(List\<<model.name>\> list);
+    }
+<endif>
+<model.fields:{ it |
+
+    public default <it.type> get<it.ucname>() { return null; \}}>
+}
+>>
+
+//////////////////////////////////////////////////////////////////////
