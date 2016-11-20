@@ -27,6 +27,14 @@
       <plugin>
         <groupId>com.distelli.graphql</groupId>
         <artifactId>graphql-apigen</artifactId>
+        <executions>
+          <execution>
+            <id>crap</id>
+            <goals>
+              <goal>apigen</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>io.takari.maven.plugins</groupId>

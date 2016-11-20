@@ -1,25 +1,29 @@
 package com.distelli.graphql.apigen;
 
-import java.util.Set;
-import java.util.TreeSet;
-import graphql.language.InterfaceTypeDefinition;
-import graphql.language.EnumTypeDefinition;
-import graphql.language.ScalarTypeDefinition;
-import graphql.language.UnionTypeDefinition;
-import graphql.language.InputObjectTypeDefinition;
-import graphql.language.Type;
-import graphql.language.ObjectTypeDefinition;
 import graphql.language.Definition;
+import graphql.language.EnumTypeDefinition;
+import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
+import graphql.language.InputObjectTypeDefinition;
+import graphql.language.InputValueDefinition;
+import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
+import graphql.language.ObjectTypeDefinition;
+import graphql.language.OperationTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
+import graphql.language.SchemaDefinition;
+import graphql.language.Type;
 import graphql.language.TypeName;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
+import graphql.language.UnionTypeDefinition;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class STModel {
     private static Map<String, String> BUILTINS = new HashMap<String, String>(){{
@@ -111,6 +115,10 @@ public class STModel {
         return typeEntry.getDefinition() instanceof InputObjectTypeDefinition;
     }
 
+    public boolean isSchemaType() {
+        return typeEntry.getDefinition() instanceof SchemaDefinition;
+    }
+
     public String getPackageName() {
         return typeEntry.getPackageName();
     }
@@ -145,8 +153,18 @@ public class STModel {
         if ( null == imports ) {
             Definition def = typeEntry.getDefinition();
             Set<String> names = new TreeSet<String>();
-            if ( def instanceof ObjectTypeDefinition ) {
+            if ( isObjectType() ) {
                 addImports(names, (ObjectTypeDefinition)def);
+            } else if ( isInterfaceType() ) {
+                addImports(names, (InterfaceTypeDefinition)def);
+            } else if ( isInputObjectType() ) {
+                addImports(names, (InputObjectTypeDefinition)def);
+            } else if ( isUnionType() ) {
+                addImports(names, (UnionTypeDefinition)def);
+            } else if ( isEnumType() ) {
+                addImports(names, (EnumTypeDefinition)def);
+            } else if ( isSchemaType() ) {
+                addImports(names, (SchemaDefinition)def);
             }
             imports = new ArrayList<>(names);
         }
@@ -156,8 +174,18 @@ public class STModel {
     public synchronized List<Field> getFields() {
         if ( null == fields ) {
             Definition def = typeEntry.getDefinition();
-            if ( def instanceof ObjectTypeDefinition ) {
+            if ( isObjectType() ) {
                 fields = getFields((ObjectTypeDefinition)def);
+            } else if ( isInterfaceType() ) {
+                fields = getFields((InterfaceTypeDefinition)def);
+            } else if ( isInputObjectType() ) {
+                fields = getFields((InputObjectTypeDefinition)def);
+            } else if ( isUnionType() ) {
+                fields = getFields((UnionTypeDefinition)def);
+            } else if ( isEnumType() ) {
+                fields = getFields((EnumTypeDefinition)def);
+            } else if ( isSchemaType() ) {
+                fields = getFields((SchemaDefinition)def);
             } else {
                 fields = Collections.emptyList();
             }
@@ -168,6 +196,49 @@ public class STModel {
     private static List<Field> getFields(ObjectTypeDefinition def) {
         List<Field> fields = new ArrayList<Field>();
         for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
+            // TODO: args...
+            fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
+        }
+        return fields;
+    }
+
+    private static List<Field> getFields(InterfaceTypeDefinition def) {
+        List<Field> fields = new ArrayList<Field>();
+        for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
+            // TODO: args...
+            fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
+        }
+        return fields;
+    }
+
+    private static List<Field> getFields(InputObjectTypeDefinition def) {
+        List<Field> fields = new ArrayList<Field>();
+        for ( InputValueDefinition fieldDef : def.getInputValueDefinitions() ) {
+            // TODO: Defult value...
+            fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
+        }
+        return fields;
+    }
+
+    private static List<Field> getFields(UnionTypeDefinition def) {
+        List<Field> fields = new ArrayList<Field>();
+        for ( Type type : def.getMemberTypes() ) {
+            fields.add(new Field(null, toJavaTypeName(type)));
+        }
+        return fields;
+    }
+
+    private static List<Field> getFields(EnumTypeDefinition def) {
+        List<Field> fields = new ArrayList<Field>();
+        for ( EnumValueDefinition fieldDef : def.getEnumValueDefinitions() ) {
+            fields.add(new Field(fieldDef.getName(), null));
+        }
+        return fields;
+    }
+
+    private static List<Field> getFields(SchemaDefinition def) {
+        List<Field> fields = new ArrayList<Field>();
+        for ( OperationTypeDefinition fieldDef : def.getOperationTypeDefinitions() ) {
             fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
         }
         return fields;
@@ -181,6 +252,7 @@ public class STModel {
         } else if ( type instanceof TypeName ) {
             String name = ((TypeName)type).getName();
             String rename = RENAME.get(name);
+            // TODO: scalar type directive to get implementation class...
             if ( null != rename ) return rename;
             return name;
         } else {
@@ -191,6 +263,34 @@ public class STModel {
 
     private void addImports(Collection<String> imports, ObjectTypeDefinition def) {
         for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
+            addImports(imports, fieldDef.getType());
+        }
+    }
+
+    private void addImports(Collection<String> imports, InterfaceTypeDefinition def) {
+        for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
+            addImports(imports, fieldDef.getType());
+        }
+    }
+
+    private void addImports(Collection<String> imports, InputObjectTypeDefinition def) {
+        for ( InputValueDefinition fieldDef : def.getInputValueDefinitions() ) {
+            addImports(imports, fieldDef.getType());
+        }
+    }
+
+    private void addImports(Collection<String> imports, UnionTypeDefinition def) {
+        for ( Type type : def.getMemberTypes() ) {
+            addImports(imports, type);
+        }
+    }
+
+    private void addImports(Collection<String> imports, EnumTypeDefinition def) {
+        // No imports should be necessary...
+    }
+
+    private void addImports(Collection<String> imports, SchemaDefinition def) {
+        for ( OperationTypeDefinition fieldDef : def.getOperationTypeDefinitions() ) {
             addImports(imports, fieldDef.getType());
         }
     }
@@ -209,6 +309,7 @@ public class STModel {
                 imports.add(importName);
             } else {
                 TypeEntry refEntry = referenceTypes.get(name);
+                // TODO: scalar name may be different... should read annotations for scalars.
                 if ( null == refEntry ) {
                     throw new RuntimeException("Unknown type '"+name+"' was not defined in the schema");
                 } else {

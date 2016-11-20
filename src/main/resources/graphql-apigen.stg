@@ -2,8 +2,9 @@
 group apigen;
 
 //////////////////////////////////////////////////////////////////////
-pojoFileName(model) ::= "<model.name>.java"
-pojoGenerator(model) ::= <<
+// Define the objectType builder:
+objectTypeFileName(model) ::= "<if(model.objectType)><model.name>.java<endif>"
+objectTypeGenerator(model) ::= <<
 package <model.packageName>;
 
 <model.imports:{ it |
@@ -81,6 +82,41 @@ public interface <model.name> {
 
     public default <it.type> get<it.ucname>() { return null; \}}>
 }
+
 >>
 
 //////////////////////////////////////////////////////////////////////
+// Define the interface builder:
+interfaceFileName(model) ::= "<if(model.interfaceType)><model.name>.java<endif>"
+interfaceGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+
+public interface <model.name> {
+<model.fields:{ it |
+
+    public <it.type> get<it.ucname>();}>
+}
+
+>>
+
+//////////////////////////////////////////////////////////////////////
+// Define the enum builder:
+enumFileName(model) ::= "<if(model.enumType)><model.name>.java<endif>"
+enumGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+
+public enum <model.name> {
+<model.fields:{ it |
+
+    <it.name>,}>
+}
+
+>>
