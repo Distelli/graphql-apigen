@@ -19,6 +19,13 @@ public interface <model.name> {
 <model.fields:{ it |
 
         private <it.type> _<it.name>;}>
+        public Builder() {}
+        public Builder(<model.name> src) {
+<model.fields:{ it |
+
+            _<it.name> = src.get<it.ucname>();}>
+        }
+
 <model.fields:{ it |
 
         public Builder with<it.ucname>(<it.type> _<it.name>) {
