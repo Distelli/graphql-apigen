@@ -1,9 +1,9 @@
 package com.distelli.graphql.apigen;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.TypeDefinition;
+import graphql.language.Definition;
 import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.InterfaceTypeDefinition;
@@ -14,34 +14,27 @@ import graphql.language.InputObjectTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.Scalars;
 import java.util.List;
+import java.net.URL;
 
 public class TypeEntry {
-    private Path source;
-    private TypeDefinition typeDefinition;
+    private URL source;
+    private Definition definition;
     private String packageName;
 
-    public TypeEntry(TypeDefinition typeDefinition, Path source) {
+    public TypeEntry(Definition definition, URL source) {
         this.source = source;
-        this.typeDefinition = typeDefinition;
-        this.packageName = getPackageName(getDirectives(typeDefinition));
+        this.definition = definition;
+        this.packageName = getPackageName(getDirectives(definition));
     }
 
-    public Path getSource() {
+    public URL getSource() {
         return source;
     }
 
     // Return nice formatted string for source location:
     public String getSourceLocation() {
-        return source + ":[" + typeDefinition.getSourceLocation().getLine() +
-            ", " + typeDefinition.getSourceLocation().getColumn() + "]";
-    }
-
-    public boolean isObjectTypeDefinition() {
-        return typeDefinition instanceof ObjectTypeDefinition;
-    }
-
-    public ObjectTypeDefinition getObjectTypeDefinition() {
-        return (ObjectTypeDefinition)typeDefinition;
+        return source + ":[" + definition.getSourceLocation().getLine() +
+            ", " + definition.getSourceLocation().getColumn() + "]";
     }
 
     public String getPackageName() {
@@ -49,14 +42,17 @@ public class TypeEntry {
     }
 
     public String getName() {
-        return typeDefinition.getName();
+        if ( definition instanceof TypeDefinition ) {
+            return ((TypeDefinition)definition).getName();
+        }
+        return "";
     }
 
-    public TypeDefinition getTypeDefinition() {
-        return typeDefinition;
+    public Definition getDefinition() {
+        return definition;
     }
 
-    private static List<Directive> getDirectives(TypeDefinition def) {
+    private static List<Directive> getDirectives(Definition def) {
         if ( def instanceof ObjectTypeDefinition ) {
             return ((ObjectTypeDefinition)def).getDirectives();
         } if ( def instanceof InterfaceTypeDefinition ) {

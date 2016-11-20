@@ -2,7 +2,14 @@ package com.distelli.graphql.apigen;
 
 import java.util.Set;
 import java.util.TreeSet;
+import graphql.language.InterfaceTypeDefinition;
+import graphql.language.EnumTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
+import graphql.language.UnionTypeDefinition;
+import graphql.language.InputObjectTypeDefinition;
 import graphql.language.Type;
+import graphql.language.ObjectTypeDefinition;
+import graphql.language.Definition;
 import graphql.language.FieldDefinition;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
@@ -12,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 public class STModel {
     private static Map<String, String> BUILTINS = new HashMap<String, String>(){{
@@ -47,6 +55,18 @@ public class STModel {
             return new STModel(this);
         }
     }
+    // Field of Interface, Object, InputObject, UnionType (no names), Enum (no types)
+    public static class Field {
+        public String name;
+        public String type;
+        public Field(String name, String type) {
+            this.name = name;
+            this.type = type;
+        }
+        public String getUcname() {
+            return ucFirst(name);
+        }
+    }
     private TypeEntry typeEntry;
     private Map<String, TypeEntry> referenceTypes;
     private List<Field> fields;
@@ -56,6 +76,39 @@ public class STModel {
     private STModel(Builder builder) {
         this.typeEntry = builder.typeEntry;
         this.referenceTypes = builder.referenceTypes;
+    }
+
+    public void validate() {
+        // TODO: Validate that any Object "implements" actually implements
+        // the interface so we can error before compile time...
+
+        // these throw if there are any inconsistencies...
+        getFields();
+        getImports();
+    }
+
+    public boolean isObjectType() {
+        return typeEntry.getDefinition() instanceof ObjectTypeDefinition;
+    }
+
+    public boolean isInterfaceType() {
+        return typeEntry.getDefinition() instanceof InterfaceTypeDefinition;
+    }
+
+    public boolean isEnumType() {
+        return typeEntry.getDefinition() instanceof EnumTypeDefinition;
+    }
+
+    public boolean isScalarType() {
+        return typeEntry.getDefinition() instanceof ScalarTypeDefinition;
+    }
+
+    public boolean isUnionType() {
+        return typeEntry.getDefinition() instanceof UnionTypeDefinition;
+    }
+
+    public boolean isInputObjectType() {
+        return typeEntry.getDefinition() instanceof InputObjectTypeDefinition;
     }
 
     public String getPackageName() {
@@ -75,17 +128,6 @@ public class STModel {
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
-    public synchronized List<String> getImports() {
-        if ( null == imports ) {
-            Set<String> names = new TreeSet<String>();
-            for ( FieldDefinition fieldDef : typeEntry.getObjectTypeDefinition().getFieldDefinitions() ) {
-                addTypeNames(names, fieldDef.getType());
-            }
-            imports = new ArrayList<>(names);
-        }
-        return imports;
-    }
-
     public synchronized Field getIdField() {
         if ( ! gotIdField ) {
             for ( Field field : getFields() ) {
@@ -99,24 +141,34 @@ public class STModel {
         return idField;
     }
 
-    public static class Field {
-        public String name;
-        public String type;
-        public Field(String name, String type) {
-            this.name = name;
-            this.type = type;
+    public synchronized List<String> getImports() {
+        if ( null == imports ) {
+            Definition def = typeEntry.getDefinition();
+            Set<String> names = new TreeSet<String>();
+            if ( def instanceof ObjectTypeDefinition ) {
+                addImports(names, (ObjectTypeDefinition)def);
+            }
+            imports = new ArrayList<>(names);
         }
-        public String getUcname() {
-            return ucFirst(name);
-        }
+        return imports;
     }
 
     public synchronized List<Field> getFields() {
         if ( null == fields ) {
-            fields = new ArrayList<>();
-            for ( FieldDefinition fieldDef : typeEntry.getObjectTypeDefinition().getFieldDefinitions() ) {
-                fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
+            Definition def = typeEntry.getDefinition();
+            if ( def instanceof ObjectTypeDefinition ) {
+                fields = getFields((ObjectTypeDefinition)def);
+            } else {
+                fields = Collections.emptyList();
             }
+        }
+        return fields;
+    }
+
+    private static List<Field> getFields(ObjectTypeDefinition def) {
+        List<Field> fields = new ArrayList<Field>();
+        for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
+            fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
         }
         return fields;
     }
@@ -137,28 +189,34 @@ public class STModel {
         return null;
     }
 
-    private void addTypeNames(Collection<String> names, Type type) {
+    private void addImports(Collection<String> imports, ObjectTypeDefinition def) {
+        for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
+            addImports(imports, fieldDef.getType());
+        }
+    }
+
+    private void addImports(Collection<String> imports, Type type) {
         if ( type instanceof ListType ) {
-            names.add("java.util.List");
-            addTypeNames(names, ((ListType)type).getType());
+            imports.add("java.util.List");
+            addImports(imports, ((ListType)type).getType());
         } else if ( type instanceof NonNullType ) {
-            addTypeNames(names, ((NonNullType)type).getType());
+            addImports(imports, ((NonNullType)type).getType());
         } else if ( type instanceof TypeName ) {
             String name = ((TypeName)type).getName();
             if ( BUILTINS.containsKey(name) ) {
                 String importName = BUILTINS.get(name);
                 if ( null == importName ) return;
-                names.add(importName);
+                imports.add(importName);
             } else {
                 TypeEntry refEntry = referenceTypes.get(name);
                 if ( null == refEntry ) {
-                    System.err.println("Unknown type '"+name+"' was not defined in the schema");
+                    throw new RuntimeException("Unknown type '"+name+"' was not defined in the schema");
                 } else {
-                    names.add(refEntry.getPackageName() + "." + name);
+                    imports.add(refEntry.getPackageName() + "." + name);
                 }
             }
         } else {
-            System.err.println("Unknown Type="+type.getClass().getName());
+            throw new RuntimeException("Unknown Type="+type.getClass().getName());
         }
     }
 }

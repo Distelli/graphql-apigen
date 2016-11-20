@@ -16,65 +16,88 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Execute;
+import org.apache.maven.plugins.annotations.ResolutionScope;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Enumeration;
+import org.apache.maven.model.Resource;
+import java.util.Collections;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import java.util.ArrayList;
 
-/**
- * These comments are used to generate plugin.xml. See http://maven.apache.org/plugin-tools/maven-plugin-tools-java/index.html
- *
- * 
- * @goal generate-sources
- * @phase generate-sources
- */
 @Mojo(name="apigen",
-      defaultPhase=LifecyclePhase.GENERATE_SOURCES)
-@Execute(goal="apigen",
-         phase = LifecyclePhase.GENERATE_SOURCES)
+      defaultPhase=LifecyclePhase.GENERATE_SOURCES,
+      requiresDependencyResolution=ResolutionScope.COMPILE)
+@Execute(goal="apigen")
 public class ApiGenMojo extends AbstractMojo {
-    /**
-     * @parameter property="project"
-     * @required
-     * @readonly
-     */
     @Parameter(defaultValue="${project}", readonly=true)
     private MavenProject project;
 
-    /**
-     * Sources
-     *
-     * @parameter
-     * @required
-     */
-    @Parameter(name="sources", required=true)
-    private List<String> sources;
+    @Parameter(name="sourceDirectory",
+               defaultValue="schema")
+    private File sourceDirectory;
 
-    // TODO: Support "reference" imports when schemas depend on each other.
-
-    /**
-     * @parameter default-value="target/generated-sources/apigen"
-     * @required
-     */
     @Parameter(name="outputDirectory",
                defaultValue="target/generated-sources/apigen")
     private File outputDirectory;
 
+    private File makeAbsolute(File in) {
+        if ( in.isAbsolute() ) return in;
+        return new File(project.getBasedir(), in.toString());
+    }
+
+    private ClassLoader getCompileClassLoader() throws Exception {
+        List<URL> urls = new ArrayList<>();
+        int idx = 0;
+        String ignored = project.getBuild().getOutputDirectory();
+        getLog().debug("ignore="+ignored);
+        for ( String path : project.getCompileClasspathElements() ) {
+            if ( path.equals(ignored) ) continue;
+            File file = makeAbsolute(new File(path));
+            String name = file.toString();
+            if ( file.isDirectory() || ! file.exists() ) {
+                name = name + "/";
+            }
+            URL url = new URL("file", null, name);
+            getLog().debug("classpath += " + url);
+            urls.add(url);
+        }
+        return new URLClassLoader(urls.toArray(new URL[urls.size()]));
+    }
+
+    private boolean hasClass(ClassLoader classLoader, String binaryName) {
+        try {
+            return null != classLoader.loadClass(binaryName);
+        } catch ( Exception ex ) {}
+        return false;
+    }
+
     @Override
     public void execute() {
-        if ( null == sources ) {
-            getLog().error("The graphql-apigen plugin must contain configuration as such:\n"+
-                           "\t<configuration>\n"+
-                           "\t  <sources>\n"+
-                           "\t    <source>directory-name</source>\n"+
-                           "\t  </sources>\n"+
-                           "\t</configuration>");
-            return;
-        }
         try {
+            sourceDirectory = makeAbsolute(sourceDirectory);
+            outputDirectory = makeAbsolute(outputDirectory);
+            getLog().debug("Running ApiGen\n\tsourceDirectory=" + sourceDirectory +
+                           "\n\toutputDirectory=" + outputDirectory);
+            ClassLoader cp = getCompileClassLoader();
             ApiGen apiGen = new ApiGen.Builder()
                 .withOutputDirectory(outputDirectory.toPath())
+                .withGuice(hasClass(cp, "com.google.inject.Guice"))
                 .build();
-            for ( String source : sources ) {
-                findGraphql(source, apiGen::addForGeneration);
+            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(cp);
+            for ( org.springframework.core.io.Resource resource : resolver.getResources("classpath*:graphql-apigen-schema/*.graphql") ) {
+                URL url = resource.getURL();
+                getLog().debug("Processing "+url);
+                apiGen.addForReference(url);
             }
+            findGraphql(sourceDirectory, apiGen::addForGeneration);
             apiGen.generate();
+            Resource schemaResource = new Resource();
+            schemaResource.setTargetPath("graphql-apigen-schema");
+            schemaResource.setFiltering(false);
+            schemaResource.setIncludes(Collections.singletonList("*.graphql"));
+            schemaResource.setDirectory(sourceDirectory.toString());
+            project.addResource(schemaResource);
             project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
         } catch (Exception e) {
             String msg = e.getMessage();
@@ -87,13 +110,13 @@ public class ApiGenMojo extends AbstractMojo {
         public void visit(Path path) throws IOException;
     }
 
-    private void findGraphql(String rootDir, VisitPath visitPath) throws IOException {
-        Path path = FileSystems.getDefault().getPath(rootDir);
+    private void findGraphql(File rootDir, VisitPath visitPath) throws IOException {
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**/*.graphql");
-        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+        Files.walkFileTree(rootDir.toPath(), new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     if ( matcher.matches(file) ) {
+                        getLog().debug("Processing "+file);
                         visitPath.visit(file);
                     }
                     return FileVisitResult.CONTINUE;

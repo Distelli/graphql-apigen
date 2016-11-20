@@ -1,4 +1,8 @@
-enum Episode @java(package:"org.distelli.starwars") { NEWHOPE, EMPIRE, JEDI }
+enum Episode @java(package:"org.distelli.starwars") {
+    NEWHOPE,
+    EMPIRE,
+    JEDI
+}
 
 interface Character @java(package:"org.distelli.starwars") {
     id: String!,

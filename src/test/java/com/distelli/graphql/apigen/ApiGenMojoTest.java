@@ -7,17 +7,41 @@ import org.junit.Rule;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import java.io.File;
+import io.takari.maven.testing.executor.junit.MavenJUnitTestRunner;
+import org.junit.runner.RunWith;
+import io.takari.maven.testing.executor.MavenVersions;
+import io.takari.maven.testing.executor.MavenRuntime;
+import io.takari.maven.testing.executor.MavenRuntime.MavenRuntimeBuilder;
 
+@RunWith(MavenJUnitTestRunner.class)
+@MavenVersions({"3.0.5"})
 public class ApiGenMojoTest {
     @Rule
     public TestResources resources = new TestResources();
 
-    @Rule
-    public TestMavenRuntime maven = new TestMavenRuntime();
+    public MavenRuntime mavenRuntime;
+
+    public ApiGenMojoTest(MavenRuntimeBuilder builder) throws Exception {
+        mavenRuntime = builder.build();
+    }
 
     @Test
-    public void test() throws Exception {
+    public void testBasic() throws Exception {
         File basedir = resources.getBasedir("basic");
-        maven.executeMojo(basedir, "apigen");
+        MavenExecutionResult result = mavenRuntime
+            .forProject(basedir)
+            .execute("clean", "compile");
+
+        result.assertErrorFreeLog();
+    }
+
+    @Test
+    public void testStarwars() throws Exception {
+        File basedir = resources.getBasedir("starwars");
+        MavenExecutionResult result = mavenRuntime
+            .forProject(basedir)
+            .execute("clean", "compile");
+
+        result.assertErrorFreeLog();
     }
 }

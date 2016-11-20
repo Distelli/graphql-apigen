@@ -2,8 +2,11 @@
   <pluginExecutions>
     <pluginExecution>
       <pluginExecutionFilter>
+        <groupId>com.distelli.graphql</groupId>
+        <artifactId>graphql-apigen</artifactId>
+        <versionRange>[1.0,)</versionRange>
         <goals>
-          <goal>generate-sources</goal>
+          <goal>apigen</goal>
         </goals>
       </pluginExecutionFilter>
       <action>

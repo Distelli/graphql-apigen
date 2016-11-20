@@ -46,10 +46,12 @@ public interface <model.name> {
         @Override
         public String toString() {
             return "<model.name>{"
+<if(model.fields)>
                  + "<first(model.fields).name>=" + _<first(model.fields).name>
 <rest(model.fields):{ it |
 
                  + ", <it.name>=" + _<it.name>}>
+<endif>
                  + "}";
         }
         // TODO: equals(Object) & hashCode()
@@ -69,6 +71,7 @@ public interface <model.name> {
             return "<model.name>.Unresolved{"
                  + "id=" + _id
                  + "}";
+        }
     }
     public static interface Resolver {
         public List\<<model.name>\> resolve(List\<<model.name>\> list);
