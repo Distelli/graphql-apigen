@@ -44,4 +44,14 @@ public class ApiGenMojoTest {
 
         result.assertErrorFreeLog();
     }
+
+    @Test
+    public void testPosts() throws Exception {
+        File basedir = resources.getBasedir("posts");
+        MavenExecutionResult result = mavenRuntime
+            .forProject(basedir)
+            .execute("clean", "test");
+
+        result.assertErrorFreeLog();
+    }
 }

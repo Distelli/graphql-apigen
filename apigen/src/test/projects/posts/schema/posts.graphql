@@ -1,0 +1,25 @@
+type Author @java(package:"com.distelli.posts") {
+    id: Int! # the ! means that every author object _must_ have an id
+    firstName: String
+    lastName: String
+    posts: [Post] # the list of Posts by this author
+}
+
+type Post @java(package:"com.distelli.posts") {
+    id: Int!
+    title: String
+    author: Author
+    votes: Int
+}
+
+# the schema allows the following query:
+type QueryPosts @java(package:"com.distelli.posts") {
+    posts: [Post]
+}
+
+# this schema allows the following mutation:
+type MutatePosts @java(package:"com.distelli.posts") {
+    upvotePost(
+      postId: Int!
+    ): Post
+}

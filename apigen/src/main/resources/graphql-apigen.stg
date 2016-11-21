@@ -17,49 +17,61 @@ import java.util.List;
 public interface <model.name> {
     public static class Builder {
 <model.fields:{ it |
+<if(!it.args)>
 
-        private <it.type> _<it.name>;}>
+        private <it.type> _<it.name>;
+<endif>}>
         public Builder() {}
         public Builder(<model.name> src) {
 <model.fields:{ it |
+<if(!it.args)>
 
-            _<it.name> = src.get<it.ucname>();}>
+            _<it.name> = src.get<it.ucname>();
+<endif>}>
         }
 
 <model.fields:{ it |
+<if(!it.args)>
 
         public Builder with<it.ucname>(<it.type> _<it.name>) {
             this._<it.name> = _<it.name>;
             return this;
-        \}}>
+        \}
+<endif>}>
         public <model.name> build() {
             return new Impl(this);
         }
     }
     public static class Impl implements <model.name> {
 <model.fields:{ it |
+<if(!it.args)>
 
-        private <it.type> _<it.name>;}>
-        private Impl(Builder builder) {
+        private <it.type> _<it.name>;
+<endif>}>
+        protected Impl(Builder builder) {
 <model.fields:{ it |
+<if(!it.args)>
 
-            this._<it.name> = builder._<it.name>;}>
+            this._<it.name> = builder._<it.name>;
+<endif>}>
         }
 <model.fields:{ it |
+<if(!it.args)>
 
         @Override
         public <it.type> get<it.ucname>() {
             return _<it.name>;
-        \}}>
+        \}
+<endif>}>
         @Override
         public String toString() {
             return "<model.name>{"
-<if(model.fields)>
-                 + "<first(model.fields).name>=" + _<first(model.fields).name>
-<rest(model.fields):{ it |
+<model.fields,[true]:{ it,isFirst |
+<if(!it.args)>
 
-                 + ", <it.name>=" + _<it.name>}>
-<endif>
+                 + "<if(!isFirst)>, <endif><it.name>=" + _<it.name>
+<endif>}>
+
                  + "}";
         }
         // TODO: equals(Object) & hashCode()
@@ -81,13 +93,23 @@ public interface <model.name> {
                  + "}";
         }
     }
-    public static interface Resolver {
+    public static interface Resolver extends com.distelli.graphql.Resolver\<<model.name>\> {
         public List\<<model.name>\> resolve(List\<<model.name>\> list);
     }
 <endif>
 <model.fields:{ it |
 
-    public default <it.type> get<it.ucname>() { return null; \}}>
+<if(it.args)>
+    // TODO: extend any implemented interfaces...
+    interface <it.ucname>Args {
+<it.args:{ it |
+
+        default <it.type> get<it.ucname>() { return null; \}}>
+    \}
+    public default <it.type> <it.name>(<it.ucname>Args args) { return null; \}
+<else>
+    public default <it.type> get<it.ucname>() { return null; \}
+<endif>}>
 }
 
 >>
@@ -98,18 +120,24 @@ objectTypeProviderFileName(model) ::= "<if(model.objectType)><model.name>TypePro
 objectTypeProviderGenerator(model) ::= <<
 package <model.packageName>;
 
-import graphql.schema.*;
+// TODO: import fieldTypes...
+import com.distelli.graphql.MethodDataFetcher;
+import com.distelli.graphql.ResolverDataFetcher;
 import graphql.Scalars;
+import graphql.schema.*;
+import java.util.Arrays;
+// To support optional injection:
+import com.google.inject.Inject;
 import javax.inject.Provider;
-import javax.inject.Inject;
-import com.distelli.apigen.DataFetcherList;
 
-public class <model.name>TypeProvider implements Provider<GraphQLObjectType> {
-<model.dataFetchers:{ it |
+public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
+<model.dataResolvers:{ it |
 <if(it.fieldType)>
     @Inject
     private <it.fieldType> <it.fieldName>;
 <endif>}>
+    @Inject(optional=true)
+    private <model.name> _impl;
     @Inject
     protected <model.name>TypeProvider() {}
     @Override
@@ -119,12 +147,30 @@ public class <model.name>TypeProvider implements Provider<GraphQLObjectType> {
 <model.fields:{ it |
 
             .field(GraphQLFieldDefinition.newFieldDefinition()
-                   .type(<it.graphQLType>)
-<if(it.dataFetcher)>
-                   .dataFetcher(<it.dataFetcher.create>)
+                .type(<it.graphQLType>)
+                .name("<it.name>")
+<if(it.args)>
+                .argument(Arrays.asList(
+<it.args:{ it |
+
+                    GraphQLArgument.newArgument()
+                    .name("<it.name>")
+                    .type(<it.graphQLType>)
+<if(it.defaultValue)>
+                    .defaultValue(<it.defaultValue>)
 <endif>
-                   .name("<it.name>")
-                   .build())}>
+                    .build()}; separator=",\n">))
+<endif>
+<if(it.dataResolver)>
+                .dataFetcher(new ResolverDataFetcher(
+                      new MethodDataFetcher(
+                          "<it.name>",
+                          <if(it.args)><model.name>.<it.ucname>Args.class<else>null<endif>,
+                          _impl),
+                      <it.dataResolver.fieldName>,
+                      <it.dataResolver.listDepth>))
+<endif>
+                .build())}>
             .build();
     }
 }
@@ -142,9 +188,26 @@ package <model.packageName>;
 import <it>;}>
 
 public interface <model.name> {
+<model.methods:{ it |
+    interface <it.ucname>Args {
+<it.args:{ it |
+        default <it.type> get<it.ucname>() { return null; \}}>
+    \}
+    public default <it.type> <it.name>(<it.ucname>Args args) {
+        return null;
+    \}}>
 <model.fields:{ it |
 
-    public <it.type> get<it.ucname>();}>
+<if(it.args)>
+    interface <it.ucname>Args {
+<it.args:{ it |
+
+        <it.type> get<it.ucname>();}>
+    \}
+    public <it.type> <it.name>(<it.ucname>Args args);
+<else>
+    public <it.type> get<it.ucname>();
+<endif>}>
 }
 
 >>

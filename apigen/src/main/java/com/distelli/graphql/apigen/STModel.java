@@ -16,6 +16,7 @@ import graphql.language.SchemaDefinition;
 import graphql.language.Type;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
+import graphql.language.Value;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,17 +61,32 @@ public class STModel {
             return new STModel(this);
         }
     }
-    public static class DataFetcher {
+    public static class DataResolver {
         public String fieldName;
         public String fieldType;
-        public String create;
+        public int listDepth;
+    }
+    public static class Arg {
+        public String name;
+        public String type;
+        public String graphQLType;
+        public String defaultValue;
+        public Arg(String name, String type) {
+            this.name = name;
+            this.type = type;
+        }
+        public String getUcname() {
+            return ucFirst(name);
+        }
     }
     // Field of Interface, Object, InputObject, UnionType (no names), Enum (no types)
     public static class Field {
         public String name;
         public String type;
-        public DataFetcher dataFetcher;
+        public DataResolver dataResolver;
         public String graphQLType;
+        public List<Arg> args;
+        public String defaultValue;
         public Field(String name, String type) {
             this.name = name;
             this.type = type;
@@ -162,14 +178,14 @@ public class STModel {
         return idField;
     }
 
-    public List<DataFetcher> getDataFetchers() {
-        Map<String, DataFetcher> fetchers = new LinkedHashMap<>();
+    public List<DataResolver> getDataResolvers() {
+        Map<String, DataResolver> resolvers = new LinkedHashMap<>();
         for ( Field field : getFields() ) {
-            DataFetcher fetcher = field.dataFetcher;
-            if ( null == fetcher ) continue;
-            fetchers.put(fetcher.fieldType, fetcher);
+            DataResolver resolver = field.dataResolver;
+            if ( null == resolver ) continue;
+            resolvers.put(resolver.fieldType, resolver);
         }
-        return new ArrayList<>(fetchers.values());
+        return new ArrayList<>(resolvers.values());
     }
 
     public synchronized List<String> getImports() {
@@ -219,10 +235,10 @@ public class STModel {
     private List<Field> getFields(ObjectTypeDefinition def) {
         List<Field> fields = new ArrayList<Field>();
         for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
-            // TODO: args...
             Field field = new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType()));
             field.graphQLType = toGraphQLType(fieldDef.getType());
-            field.dataFetcher = toDataFetcher(fieldDef.getName(), fieldDef.getType());
+            field.dataResolver = toDataResolver(fieldDef.getType());
+            field.args = toArgs(fieldDef.getInputValueDefinitions());
             fields.add(field);
         }
         return fields;
@@ -231,8 +247,9 @@ public class STModel {
     private List<Field> getFields(InterfaceTypeDefinition def) {
         List<Field> fields = new ArrayList<Field>();
         for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
-            // TODO: args...
-            fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
+            Field field = new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType()));
+            field.args = toArgs(fieldDef.getInputValueDefinitions());
+            fields.add(field);
         }
         return fields;
     }
@@ -240,8 +257,9 @@ public class STModel {
     private List<Field> getFields(InputObjectTypeDefinition def) {
         List<Field> fields = new ArrayList<Field>();
         for ( InputValueDefinition fieldDef : def.getInputValueDefinitions() ) {
-            // TODO: Defult value...
-            fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
+            Field field = new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType()));
+            field.defaultValue = toJavaValue(fieldDef.getDefaultValue());
+            fields.add(field);
         }
         return fields;
     }
@@ -270,25 +288,39 @@ public class STModel {
         return fields;
     }
 
-    private DataFetcher toDataFetcher(String name, Type type) {
+    private List<Arg> toArgs(List<InputValueDefinition> defs) {
+        List<Arg> result = new ArrayList<>();
+        for ( InputValueDefinition def : defs ) {
+            Arg arg = new Arg(def.getName(), toJavaTypeName(def.getType()));
+            arg.graphQLType = toGraphQLType(def.getType());
+            arg.defaultValue = toJavaValue(def.getDefaultValue());
+            result.add(arg);
+        }
+        return result;
+    }
+
+    private String toJavaValue(Value value) {
+        // TODO: Implement me!
+        return null;
+    }
+
+    private DataResolver toDataResolver(Type type) {
         if ( type instanceof ListType ) {
-            DataFetcher fetcher = toDataFetcher(name, ((ListType)type).getType());
-            if ( null == fetcher ) return null;
-            fetcher.create = "new DataFetcherList(" + fetcher.create + ")";
-            return fetcher;
+            DataResolver resolver = toDataResolver(((ListType)type).getType());
+            if ( null == resolver ) return null;
+            resolver.listDepth++;
+            return resolver;
         } else if ( type instanceof NonNullType ) {
-            return toDataFetcher(name, ((NonNullType)type).getType());
+            return toDataResolver(((NonNullType)type).getType());
         } else if ( type instanceof TypeName ) {
             String typeName = ((TypeName)type).getName();
             if ( BUILTINS.containsKey(typeName) ) return null;
             TypeEntry typeEntry = referenceTypes.get(typeName);
             if ( !typeEntry.hasIdField() ) return null;
-            DataFetcher fetcher = new DataFetcher();
-            fetcher.fieldType = typeName + "DataFetcher.Factory";
-            fetcher.fieldName = "_" + lcFirst(typeName) + "Factory";
-            fetcher.create =
-                fetcher.fieldName + ".create(\""+name+"\")";
-            return fetcher;
+            DataResolver resolver = new DataResolver();
+            resolver.fieldType = typeName + ".Resolver";
+            resolver.fieldName = "_" + lcFirst(typeName) + "Resolver";
+            return resolver;
         } else {
             throw new UnsupportedOperationException("Unknown Type="+type.getClass().getName());
         }
