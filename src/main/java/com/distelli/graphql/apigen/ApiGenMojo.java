@@ -77,6 +77,7 @@ public class ApiGenMojo extends AbstractMojo {
         try {
             sourceDirectory = makeAbsolute(sourceDirectory);
             outputDirectory = makeAbsolute(outputDirectory);
+            if ( ! sourceDirectory.exists() ) return;
             getLog().debug("Running ApiGen\n\tsourceDirectory=" + sourceDirectory +
                            "\n\toutputDirectory=" + outputDirectory);
             ClassLoader cp = getCompileClassLoader();

@@ -14,7 +14,7 @@ import io.takari.maven.testing.executor.MavenRuntime;
 import io.takari.maven.testing.executor.MavenRuntime.MavenRuntimeBuilder;
 
 @RunWith(MavenJUnitTestRunner.class)
-@MavenVersions({"3.0.5"})
+@MavenVersions({"3.2.5"})
 public class ApiGenMojoTest {
     @Rule
     public TestResources resources = new TestResources();
@@ -30,7 +30,7 @@ public class ApiGenMojoTest {
         File basedir = resources.getBasedir("basic");
         MavenExecutionResult result = mavenRuntime
             .forProject(basedir)
-            .execute("clean", "compile");
+            .execute("clean", "test");
 
         result.assertErrorFreeLog();
     }

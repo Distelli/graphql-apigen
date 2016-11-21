@@ -1,4 +1,4 @@
 
-type Base {
+type Base @java(package:"test") {
     base: String
 }
