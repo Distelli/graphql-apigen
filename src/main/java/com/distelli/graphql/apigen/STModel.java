@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,10 +60,17 @@ public class STModel {
             return new STModel(this);
         }
     }
+    public static class DataFetcher {
+        public String fieldName;
+        public String fieldType;
+        public String create;
+    }
     // Field of Interface, Object, InputObject, UnionType (no names), Enum (no types)
     public static class Field {
         public String name;
         public String type;
+        public DataFetcher dataFetcher;
+        public String graphQLType;
         public Field(String name, String type) {
             this.name = name;
             this.type = type;
@@ -136,6 +144,11 @@ public class STModel {
         return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
+    private static String lcFirst(String name) {
+        if ( null == name || name.length() < 1 ) return name;
+        return name.substring(0, 1).toLowerCase() + name.substring(1);
+    }
+
     public synchronized Field getIdField() {
         if ( ! gotIdField ) {
             for ( Field field : getFields() ) {
@@ -147,6 +160,16 @@ public class STModel {
             gotIdField = true;
         }
         return idField;
+    }
+
+    public List<DataFetcher> getDataFetchers() {
+        Map<String, DataFetcher> fetchers = new LinkedHashMap<>();
+        for ( Field field : getFields() ) {
+            DataFetcher fetcher = field.dataFetcher;
+            if ( null == fetcher ) continue;
+            fetchers.put(fetcher.fieldType, fetcher);
+        }
+        return new ArrayList<>(fetchers.values());
     }
 
     public synchronized List<String> getImports() {
@@ -193,7 +216,19 @@ public class STModel {
         return fields;
     }
 
-    private static List<Field> getFields(ObjectTypeDefinition def) {
+    private List<Field> getFields(ObjectTypeDefinition def) {
+        List<Field> fields = new ArrayList<Field>();
+        for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
+            // TODO: args...
+            Field field = new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType()));
+            field.graphQLType = toGraphQLType(fieldDef.getType());
+            field.dataFetcher = toDataFetcher(fieldDef.getName(), fieldDef.getType());
+            fields.add(field);
+        }
+        return fields;
+    }
+
+    private List<Field> getFields(InterfaceTypeDefinition def) {
         List<Field> fields = new ArrayList<Field>();
         for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
             // TODO: args...
@@ -202,16 +237,7 @@ public class STModel {
         return fields;
     }
 
-    private static List<Field> getFields(InterfaceTypeDefinition def) {
-        List<Field> fields = new ArrayList<Field>();
-        for ( FieldDefinition fieldDef : def.getFieldDefinitions() ) {
-            // TODO: args...
-            fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
-        }
-        return fields;
-    }
-
-    private static List<Field> getFields(InputObjectTypeDefinition def) {
+    private List<Field> getFields(InputObjectTypeDefinition def) {
         List<Field> fields = new ArrayList<Field>();
         for ( InputValueDefinition fieldDef : def.getInputValueDefinitions() ) {
             // TODO: Defult value...
@@ -220,7 +246,7 @@ public class STModel {
         return fields;
     }
 
-    private static List<Field> getFields(UnionTypeDefinition def) {
+    private List<Field> getFields(UnionTypeDefinition def) {
         List<Field> fields = new ArrayList<Field>();
         for ( Type type : def.getMemberTypes() ) {
             fields.add(new Field(null, toJavaTypeName(type)));
@@ -228,7 +254,7 @@ public class STModel {
         return fields;
     }
 
-    private static List<Field> getFields(EnumTypeDefinition def) {
+    private List<Field> getFields(EnumTypeDefinition def) {
         List<Field> fields = new ArrayList<Field>();
         for ( EnumValueDefinition fieldDef : def.getEnumValueDefinitions() ) {
             fields.add(new Field(fieldDef.getName(), null));
@@ -236,7 +262,7 @@ public class STModel {
         return fields;
     }
 
-    private static List<Field> getFields(SchemaDefinition def) {
+    private List<Field> getFields(SchemaDefinition def) {
         List<Field> fields = new ArrayList<Field>();
         for ( OperationTypeDefinition fieldDef : def.getOperationTypeDefinitions() ) {
             fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
@@ -244,7 +270,47 @@ public class STModel {
         return fields;
     }
 
-    private static String toJavaTypeName(Type type) {
+    private DataFetcher toDataFetcher(String name, Type type) {
+        if ( type instanceof ListType ) {
+            DataFetcher fetcher = toDataFetcher(name, ((ListType)type).getType());
+            if ( null == fetcher ) return null;
+            fetcher.create = "new DataFetcherList(" + fetcher.create + ")";
+            return fetcher;
+        } else if ( type instanceof NonNullType ) {
+            return toDataFetcher(name, ((NonNullType)type).getType());
+        } else if ( type instanceof TypeName ) {
+            String typeName = ((TypeName)type).getName();
+            if ( BUILTINS.containsKey(typeName) ) return null;
+            TypeEntry typeEntry = referenceTypes.get(typeName);
+            if ( !typeEntry.hasIdField() ) return null;
+            DataFetcher fetcher = new DataFetcher();
+            fetcher.fieldType = typeName + "DataFetcher.Factory";
+            fetcher.fieldName = "_" + lcFirst(typeName) + "Factory";
+            fetcher.create =
+                fetcher.fieldName + ".create(\""+name+"\")";
+            return fetcher;
+        } else {
+            throw new UnsupportedOperationException("Unknown Type="+type.getClass().getName());
+        }
+    }
+
+    private String toGraphQLType(Type type) {
+        if ( type instanceof ListType ) {
+            return "new GraphQLList(" + toGraphQLType(((ListType)type).getType()) + ")";
+        } else if ( type instanceof NonNullType ) {
+            return toGraphQLType(((NonNullType)type).getType());
+        } else if ( type instanceof TypeName ) {
+            String name = ((TypeName)type).getName();
+            if ( BUILTINS.containsKey(name) ) {
+                return "Scalars.GraphQL" + name;
+            }
+            return "new GraphQLTypeReference(\""+name+"\")";
+        } else {
+            throw new UnsupportedOperationException("Unknown Type="+type.getClass().getName());
+        }
+    }
+
+    private String toJavaTypeName(Type type) {
         if ( type instanceof ListType ) {
             return "List<" + toJavaTypeName(((ListType)type).getType()) + ">";
         } else if ( type instanceof NonNullType ) {
@@ -256,9 +322,8 @@ public class STModel {
             if ( null != rename ) return rename;
             return name;
         } else {
-            System.err.println("Unknown Type="+type.getClass().getName());
+            throw new UnsupportedOperationException("Unknown Type="+type.getClass().getName());
         }
-        return null;
     }
 
     private void addImports(Collection<String> imports, ObjectTypeDefinition def) {

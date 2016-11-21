@@ -52,6 +52,15 @@ public class TypeEntry {
         return definition;
     }
 
+    public boolean hasIdField() {
+        if ( definition instanceof ObjectTypeDefinition) {
+            return ((ObjectTypeDefinition)definition).getFieldDefinitions()
+                .stream()
+                .anyMatch((field) -> "id".equals(field.getName()));
+        }
+        return false;
+    }
+
     private static List<Directive> getDirectives(Definition def) {
         if ( def instanceof ObjectTypeDefinition ) {
             return ((ObjectTypeDefinition)def).getDirectives();

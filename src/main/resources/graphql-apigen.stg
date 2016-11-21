@@ -93,6 +93,45 @@ public interface <model.name> {
 >>
 
 //////////////////////////////////////////////////////////////////////
+// Define the object TypeProvider
+objectTypeProviderFileName(model) ::= "<if(model.objectType)><model.name>TypeProvider.java<endif>"
+objectTypeProviderGenerator(model) ::= <<
+package <model.packageName>;
+
+import graphql.schema.*;
+import graphql.Scalars;
+import javax.inject.Provider;
+import javax.inject.Inject;
+import com.distelli.apigen.DataFetcherList;
+
+public class <model.name>TypeProvider implements Provider<GraphQLObjectType> {
+<model.dataFetchers:{ it |
+<if(it.fieldType)>
+    @Inject
+    private <it.fieldType> <it.fieldName>;
+<endif>}>
+    @Inject
+    protected <model.name>TypeProvider() {}
+    @Override
+    public GraphQLObjectType get() {
+        return GraphQLObjectType.newObject()
+            .name("<model.name>")
+<model.fields:{ it |
+
+            .field(GraphQLFieldDefinition.newFieldDefinition()
+                   .type(<it.graphQLType>)
+<if(it.dataFetcher)>
+                   .dataFetcher(<it.dataFetcher.create>)
+<endif>
+                   .name("<it.name>")
+                   .build())}>
+            .build();
+    }
+}
+
+>>
+
+//////////////////////////////////////////////////////////////////////
 // Define the interface builder:
 interfaceFileName(model) ::= "<if(model.interfaceType)><model.name>.java<endif>"
 interfaceGenerator(model) ::= <<
