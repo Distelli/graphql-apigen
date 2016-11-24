@@ -28,7 +28,7 @@ public class ApiGen {
     private Parser parser = new Parser();
     private Path outputDirectory;
     private STGroup stGroup;
-    private Boolean withGuice;
+    private String guiceModuleName;
     private Map<String, TypeEntry> generatedTypes = new LinkedHashMap<>();
     private Map<String, TypeEntry> referenceTypes = new HashMap<>();
     private List<TypeEntry> schemaDefinitions = new ArrayList<>();
@@ -36,7 +36,7 @@ public class ApiGen {
     public static class Builder {
         private Path outputDirectory;
         private STGroup stGroup;
-        private Boolean withGuice;
+        private String guiceModuleName;
 
         /**
          * (required)
@@ -62,10 +62,11 @@ public class ApiGen {
             return this;
         }
 
-        public Builder withGuice(Boolean withGuice) {
-            this.withGuice = withGuice;
+        public Builder withGuiceModuleName(String guiceModuleName) {
+            this.guiceModuleName = guiceModuleName;
             return this;
         }
+
         /**
          * Create a new instances of ApiGen with the built parameters.
          *
@@ -82,7 +83,7 @@ public class ApiGen {
         if ( null == builder.outputDirectory ) {
             throw new NullPointerException("The ApiGen outputDirectory must be specified");
         }
-        withGuice = builder.withGuice;
+        guiceModuleName = builder.guiceModuleName;
         outputDirectory = builder.outputDirectory;
         stGroup = ( null == builder.stGroup )
             ? getDefaultSTGroup()
@@ -173,17 +174,11 @@ public class ApiGen {
             generatorNames.add(generatorName);
         }
 
-        Map<String, StringBuilder> moduleBuilders = new LinkedHashMap<>();
         List<TypeEntry> allEntries = new ArrayList(generatedTypes.values());
         allEntries.addAll(schemaDefinitions);
+        StringBuilder moduleBuilder = new StringBuilder();
         for ( TypeEntry entry : allEntries ) {
             try {
-                StringBuilder moduleBuilder = moduleBuilders.get(entry.getPackageName());
-                if ( null == moduleBuilder ) {
-                    moduleBuilder = new StringBuilder();
-                    moduleBuilders.put(entry.getPackageName(), moduleBuilder);
-                }
-
                 STModel model = new STModel.Builder()
                     .withTypeEntry(entry)
                     .withReferenceTypes(referenceTypes)
@@ -212,17 +207,33 @@ public class ApiGen {
                                            entry.getSource() + "'", ex);
             }
         }
-        if ( null != withGuice && withGuice && stGroup.isDefined("guiceModule") ) {
-            for ( Map.Entry<String, StringBuilder> entry : moduleBuilders.entrySet() ) {
-                if ( entry.getValue().length() <= 0 ) continue;
-                String content = stGroup.getInstanceOf("guiceModule")
-                    .add("package", entry.getKey())
-                    .add("configure", entry.getValue())
-                    .render();
-                writeFile(Paths.get(getDirectory(entry.getKey()).toString(), "GuiceModule.java"),
-                          content);
-            }
+        if ( moduleBuilder.length() > 0 && guiceModuleName != null && stGroup.isDefined("guiceModule") ) {
+            PackageClassName packageClassName = getPackageClassName(guiceModuleName);
+            String content = stGroup.getInstanceOf("guiceModule")
+                .add("packageName", packageClassName.packageName)
+                .add("className", packageClassName.className)
+                .add("configure", moduleBuilder.toString())
+                .render();
+            writeFile(Paths.get(getDirectory(packageClassName.packageName).toString(),
+                                packageClassName.className+".java"),
+                      content);
         }
+    }
+
+    private static class PackageClassName {
+        public String packageName;
+        public String className;
+        public PackageClassName(String packageName, String className) {
+            this.packageName = packageName;
+            this.className = className;
+        }
+    }
+
+    private PackageClassName getPackageClassName(String fullName) {
+        int dot = fullName.lastIndexOf(".");
+        if ( dot < 0 ) return new PackageClassName(null, fullName);
+        return new PackageClassName(fullName.substring(0, dot),
+                                    fullName.substring(dot+1));
     }
 
     public Path getDirectory(String packageName) {

@@ -41,6 +41,9 @@ public class ApiGenMojo extends AbstractMojo {
                defaultValue="target/generated-sources/apigen")
     private File outputDirectory;
 
+    @Parameter(name="guiceModuleName")
+    private String guiceModuleName;
+
     private File makeAbsolute(File in) {
         if ( in.isAbsolute() ) return in;
         return new File(project.getBasedir(), in.toString());
@@ -65,13 +68,6 @@ public class ApiGenMojo extends AbstractMojo {
         return new URLClassLoader(urls.toArray(new URL[urls.size()]));
     }
 
-    private boolean hasClass(ClassLoader classLoader, String binaryName) {
-        try {
-            return null != classLoader.loadClass(binaryName);
-        } catch ( Exception ex ) {}
-        return false;
-    }
-
     @Override
     public void execute() {
         try {
@@ -83,7 +79,7 @@ public class ApiGenMojo extends AbstractMojo {
             ClassLoader cp = getCompileClassLoader();
             ApiGen apiGen = new ApiGen.Builder()
                 .withOutputDirectory(outputDirectory.toPath())
-                .withGuice(hasClass(cp, "com.google.inject.Guice"))
+                .withGuiceModuleName(guiceModuleName)
                 .build();
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(cp);
             for ( org.springframework.core.io.Resource resource : resolver.getResources("classpath*:graphql-apigen-schema/*.graphql") ) {

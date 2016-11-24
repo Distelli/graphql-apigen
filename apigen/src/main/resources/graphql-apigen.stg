@@ -120,7 +120,9 @@ objectTypeProviderFileName(model) ::= "<if(model.objectType)><model.name>TypePro
 objectTypeProviderGenerator(model) ::= <<
 package <model.packageName>;
 
-// TODO: import fieldTypes...
+<model.imports:{ it |
+
+import <it>;}>
 import com.distelli.graphql.MethodDataFetcher;
 import com.distelli.graphql.ResolverDataFetcher;
 import graphql.Scalars;
@@ -133,7 +135,7 @@ import javax.inject.Provider;
 public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
 <model.dataResolvers:{ it |
 <if(it.fieldType)>
-    @Inject
+    @Inject(optional=true)
     private <it.fieldType> <it.fieldName>;
 <endif>}>
     @Inject(optional=true)
@@ -172,6 +174,145 @@ public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
 <endif>
                 .build())}>
             .build();
+    }
+}
+
+>>
+objectTypeProviderGuiceModule(model) ::= <<
+        types.addBinding("<model.name>")
+             .toProvider(<model.packageName>.<model.name>TypeProvider.class);
+
+>>
+
+//////////////////////////////////////////////////////////////////////
+// Define the inputObjectType builder:
+inputObjectTypeFileName(model) ::= "<if(model.inputObjectType)><model.name>.java<endif>"
+inputObjectTypeGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+
+public interface <model.name> {
+    public static class Builder {
+<model.fields:{ it |
+
+        private <it.type> _<it.name>;}>
+        public Builder() {}
+        public Builder(<model.name> src) {
+<model.fields:{ it |
+
+            _<it.name> = src.get<it.ucname>();}>
+        }
+
+<model.fields:{ it |
+
+        public Builder with<it.ucname>(<it.type> _<it.name>) {
+            this._<it.name> = _<it.name>;
+            return this;
+        \}}>
+        public <model.name> build() {
+            return new Impl(this);
+        }
+    }
+    public static class Impl implements <model.name> {
+<model.fields:{ it |
+
+        private <it.type> _<it.name>;}>
+        protected Impl(Builder builder) {
+<model.fields:{ it |
+
+            this._<it.name> = builder._<it.name>;}>
+        }
+<model.fields:{ it |
+
+        @Override
+        public <it.type> get<it.ucname>() {
+            return _<it.name>;
+        \}}>
+        @Override
+        public String toString() {
+            return "<model.name>{"
+<model.fields,[true]:{ it,isFirst |
+
+                 + "<if(!isFirst)>, <endif><it.name>=" + _<it.name>}>
+
+                 + "}";
+        }
+        // TODO: equals(Object) & hashCode()
+    }
+<model.fields:{ it |
+
+    public default <it.type> get<it.ucname>() { return null; \}}>
+}
+
+>>
+//////////////////////////////////////////////////////////////////////
+// Define the object TypeProvider
+inputObjectTypeProviderFileName(model) ::= "<if(model.inputObjectType)><model.name>TypeProvider.java<endif>"
+inputObjectTypeProviderGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+import com.distelli.graphql.MethodDataFetcher;
+import com.distelli.graphql.ResolverDataFetcher;
+import graphql.Scalars;
+import graphql.schema.*;
+import java.util.Arrays;
+// To support optional injection:
+import com.google.inject.Inject;
+import javax.inject.Provider;
+
+public class <model.name>TypeProvider implements Provider\<GraphQLInputObjectType> {
+<model.dataResolvers:{ it |
+<if(it.fieldType)>
+    @Inject(optional=true)
+    private <it.fieldType> <it.fieldName>;
+<endif>}>
+    @Inject(optional=true)
+    private <model.name> _impl;
+    @Inject
+    protected <model.name>TypeProvider() {}
+    @Override
+    public GraphQLInputObjectType get() {
+        return GraphQLInputObjectType.newInputObject()
+            .name("<model.name>")
+<model.fields:{ it |
+
+            .field(GraphQLInputObjectField.newInputObjectField()
+                .type(<it.graphQLType>)
+                .name("<it.name>")
+<if(it.defaultValue)>
+                .defaultValue(<it.defaultValue>)
+<endif>
+                .build())}>
+            .build();
+    }
+}
+
+>>
+inputObjectTypeProviderGuiceModule(model) ::= <<
+        types.addBinding("<model.name>")
+             .toProvider(<model.packageName>.<model.name>TypeProvider.class);
+
+>>
+
+//////////////////////////////////////////////////////////////////////
+// Define the GuiceModule:
+guiceModule(packageName, className, configure) ::= <<
+package <packageName>;
+import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
+import graphql.schema.GraphQLType;
+
+public class <className> extends AbstractModule {
+    protected void configure() {
+        MapBinder\<String, GraphQLType> types =
+            MapBinder.newMapBinder(binder(), String.class, GraphQLType.class);
+        <configure>
     }
 }
 

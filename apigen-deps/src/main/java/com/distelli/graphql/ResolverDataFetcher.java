@@ -40,11 +40,12 @@ public class ResolverDataFetcher implements DataFetcher {
         int depth = listDepth;
         if ( env.getSource() instanceof List ) { // batched.
             result = getBatched(env);
-            addUnresolved(unresolved, result, ++depth);
+            if ( null != resolver ) addUnresolved(unresolved, result, ++depth);
         } else {
             result = getUnbatched(env);
-            addUnresolved(unresolved, result, depth);
+            if ( null != resolver ) addUnresolved(unresolved, result, depth);
         }
+        if ( null == resolver ) return result;
         return replaceResolved(result, resolver.resolve(unresolved).iterator(), depth);
     }
 

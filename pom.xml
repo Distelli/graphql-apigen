@@ -42,10 +42,18 @@
   <properties>
     <maven.version>3.2.5</maven.version>
     <guice.version>4.1.0</guice.version>
+    <graphql.version>2.2.1.DISTELLI</graphql.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <build>
+    <extensions>
+      <extension>
+        <groupId>org.springframework.build</groupId>
+        <artifactId>aws-maven</artifactId>
+        <version>5.0.0.RELEASE</version>
+      </extension>
+    </extensions>
     <pluginManagement>
     <plugins>
       <plugin>

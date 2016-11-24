@@ -18,7 +18,6 @@ import java.util.Map;
 import static graphql.Scalars.GraphQLBoolean;
 
 public class MethodDataFetcher implements DataFetcher {
-
     private final String propertyName;
     private final Class argType;
     private final Object impl;
@@ -72,10 +71,10 @@ public class MethodDataFetcher implements DataFetcher {
         }
     }
 
-    private static class ArgsInvocationHandler implements InvocationHandler {
-        private Map<String, Object> args;
-        public ArgsInvocationHandler(Map<String, Object> args) {
-            this.args = args;
+    private static class MapInvocationHandler implements InvocationHandler {
+        private Map<String, Object> map;
+        public MapInvocationHandler(Map<String, Object> map) {
+            this.map = map;
         }
         public Object invoke(Object proxy, Method method, Object[] methodArgs) {
             if ( null != methodArgs && methodArgs.length > 0 ) {
@@ -89,9 +88,19 @@ public class MethodDataFetcher implements DataFetcher {
             }
             String ucArgName = name.substring(3);
             String lcArgName = ucArgName.substring(0, 1).toLowerCase() + ucArgName.substring(1);
-            Object result = args.get(lcArgName);
+            Object result = map.get(lcArgName);
             if ( null == result ) {
-                result = args.get(ucArgName);
+                result = map.get(ucArgName);
+            }
+            if ( null == result ) return null;
+            if ( Map.class.isAssignableFrom(result.getClass()) ) {
+                Class returnType = method.getReturnType();
+                if ( ! Map.class.isAssignableFrom(returnType) ) {
+                    return Proxy.newProxyInstance(
+                        returnType.getClassLoader(),
+                        new Class[]{returnType},
+                        new MapInvocationHandler((Map)result));
+                }
             }
             return result;
         }
@@ -116,7 +125,7 @@ public class MethodDataFetcher implements DataFetcher {
             Object argsProxy =
                 Proxy.newProxyInstance(argType.getClassLoader(),
                                        new Class[]{argType},
-                                       new ArgsInvocationHandler(args));
+                                       new MapInvocationHandler(args));
             return method.invoke(object, argsProxy);
         } catch (IllegalAccessException|InvocationTargetException ex) {
             throw new RuntimeException(ex);

@@ -17,8 +17,14 @@ type QueryPosts @java(package:"com.distelli.posts") {
     posts: [Post]
 }
 
+input InputPost @java(package:"com.distelli.posts") {
+    title: String
+    authorId: Int!
+}
+
 # this schema allows the following mutation:
 type MutatePosts @java(package:"com.distelli.posts") {
+    createPost(post:InputPost): Post
     upvotePost(
       postId: Int!
     ): Post

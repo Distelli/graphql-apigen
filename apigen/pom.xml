@@ -87,7 +87,7 @@
     <dependency>
       <groupId>com.graphql-java</groupId>
       <artifactId>graphql-java</artifactId>
-      <version>2016-11-18T15-52-36</version>
+      <version>${graphql.version}</version>
     </dependency>
 
     <!-- TEST -->

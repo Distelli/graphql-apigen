@@ -258,6 +258,7 @@ public class STModel {
         List<Field> fields = new ArrayList<Field>();
         for ( InputValueDefinition fieldDef : def.getInputValueDefinitions() ) {
             Field field = new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType()));
+            field.graphQLType = toGraphQLType(fieldDef.getType());
             field.defaultValue = toJavaValue(fieldDef.getDefaultValue());
             fields.add(field);
         }
