@@ -6,7 +6,7 @@
 
   <groupId>com.distelli.graphql</groupId>
   <artifactId>graphql-apigen-pom</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.0</version>
   <name>Generate Java interfaces given a GraphQL Schema</name>
   <packaging>pom</packaging>
 

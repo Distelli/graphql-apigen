@@ -39,6 +39,7 @@
         <plugin>
           <groupId>com.distelli.graphql</groupId>
           <artifactId>graphql-apigen</artifactId>
+          <version>1.0</version>
           <executions>
             <execution>
               <id>crap</id>
