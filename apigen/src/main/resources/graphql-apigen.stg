@@ -315,3 +315,38 @@ public enum <model.name> {
 }
 
 >>
+
+//////////////////////////////////////////////////////////////////////
+// Define the enum TypeProvider
+enumTypeProviderFileName(model) ::= "<if(model.enumType)><model.name>EnumProvider.java<endif>"
+enumTypeProviderGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+import com.distelli.graphql.MethodDataFetcher;
+import com.distelli.graphql.ResolverDataFetcher;
+import graphql.Scalars;
+import graphql.schema.*;
+import java.util.Arrays;
+// To support optional injection:
+import com.google.inject.Inject;
+import javax.inject.Provider;
+
+public class <model.name>EnumProvider implements Provider\<GraphQLEnumType> {
+    @Override
+    public GraphQLEnumType get() {
+        return GraphQLEnumType.newEnum()
+        .name("<model.name>")
+<model.fields:{ it |
+        .value("<it.name>")}; separator="\n">
+        .build();
+    }
+}
+>>
+enumTypeProviderGuiceModule(model) ::= <<
+        types.addBinding("<model.name>")
+             .toProvider(<model.packageName>.<model.name>EnumProvider.class);
+
+>>
