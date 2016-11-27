@@ -14,82 +14,26 @@ import <it>;}>
 import java.util.List;
 <endif>
 
-public interface <model.name> {
-    public static class Builder {
+public class <model.name> {
 <model.fields:{ it |
 <if(!it.args)>
 
-        private <it.type> _<it.name>;
+        private <it.type> <it.name>;
 <endif>}>
-        public Builder() {}
-        public Builder(<model.name> src) {
-<model.fields:{ it |
-<if(!it.args)>
-
-            _<it.name> = src.get<it.ucname>();
-<endif>}>
-        }
-
-<model.fields:{ it |
-<if(!it.args)>
-
-        public Builder with<it.ucname>(<it.type> _<it.name>) {
-            this._<it.name> = _<it.name>;
-            return this;
-        \}
-<endif>}>
-        public <model.name> build() {
-            return new Impl(this);
-        }
-    }
-    public static class Impl implements <model.name> {
-<model.fields:{ it |
-<if(!it.args)>
-
-        private <it.type> _<it.name>;
-<endif>}>
-        protected Impl(Builder builder) {
-<model.fields:{ it |
-<if(!it.args)>
-
-            this._<it.name> = builder._<it.name>;
-<endif>}>
-        }
-<model.fields:{ it |
-<if(!it.args)>
-
-        @Override
-        public <it.type> get<it.ucname>() {
-            return _<it.name>;
-        \}
-<endif>}>
-        @Override
-        public String toString() {
-            return "<model.name>{"
-<model.fields,[true]:{ it,isFirst |
-<if(!it.args)>
-
-                 + "<if(!isFirst)>, <endif><it.name>=" + _<it.name>
-<endif>}>
-
-                 + "}";
-        }
-        // TODO: equals(Object) & hashCode()
-    }
 <if(model.idField)>
     public static class Unresolved implements <model.name> {
         private <model.idField.type> _id;
         public Unresolved(<model.idField.type> id) {
-            this._id = id;
+            this.id = id;
         }
         @Override
         public <model.idField.type> getId() {
-            return _id;
+            return id;
         }
         @Override
         public String toString() {
             return "<model.name>.Unresolved{"
-                 + "id=" + _id
+                 + "id=" + this.id
                  + "}";
         }
     }
@@ -101,14 +45,15 @@ public interface <model.name> {
 
 <if(it.args)>
     // TODO: extend any implemented interfaces...
-    interface <it.ucname>Args {
+    public interface <it.ucname>Args {
 <it.args:{ it |
 
         default <it.type> get<it.ucname>() { return null; \}}>
     \}
-    public default <it.type> <it.name>(<it.ucname>Args args) { return null; \}
+    public <it.type> <it.name>(<it.ucname>Args args) { return null; \}
 <else>
-    public default <it.type> get<it.ucname>() { return null; \}
+    public <it.type> get<it.ucname>() { return this.<it.name>; \}
+    public <model.name> with<it.ucname>(<it.type> <it.name>) { this.<it.name> = <it.name>; return this;\}
 <endif>}>
 }
 
