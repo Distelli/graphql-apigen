@@ -42,7 +42,7 @@
   <properties>
     <maven.version>3.2.5</maven.version>
     <guice.version>4.1.0</guice.version>
-    <graphql.version>2.2.1.DISTELLI</graphql.version>
+    <graphql.version>2.3.0</graphql.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
@@ -152,6 +152,7 @@
         <configuration>
           <serverId>ossrh</serverId>
           <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <stagingProfileId>2b56e464b6a033</stagingProfileId>
         </configuration>
       </plugin>
       <plugin>
@@ -197,4 +198,12 @@
     </plugins>
     </pluginManagement>
   </build>
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+  </licenses>
 </project>
