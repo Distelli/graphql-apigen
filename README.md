@@ -2,6 +2,15 @@
 
 Generate Java APIs with GraphQL Schemas in order to facilitate "schema first" development.
 
+## NOTE: Work in progress
+
+The generated code is subject to change (hopefully for the better).
+
+The code is all generated based on [graphql-apigen.stg](apigen/src/main/resources/graphql-apigen.stg),
+and the model input is defined in [STModel.java](apigen/src/main/java/com/distelli/graphql/apigen/STModel.java).
+
+Contributions are welcomed.
+
 ### Posts Example
 
 Create a file to define your schema. In this example we are creating the `schema/posts.graphql` file:
