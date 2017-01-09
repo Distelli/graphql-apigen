@@ -2,6 +2,8 @@
 
 Generate Java APIs with GraphQL Schemas in order to facilitate "schema first" development.
 
+This project is sponsered by the [Distelli Platform](http://www.distelli.com/).
+
 ## NOTE: Work in progress
 
 The generated code is subject to change (hopefully for the better).
