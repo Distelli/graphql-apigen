@@ -9,7 +9,10 @@
   <version>1.1.1-SNAPSHOT</version>
   <name>Generate Java interfaces given a GraphQL Schema</name>
   <packaging>pom</packaging>
-
+  <description>
+    GraphQL schema first development facilitated by generating java
+    interfaces from GraphQL schema, which can easily be wired together.
+  </description>
   <url>https://github.com/distelli/graphql-apigen</url>
   <developers>
     <developer>
@@ -197,6 +200,16 @@
       </plugin>
     </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+      </plugin>
+    </plugins>
   </build>
   <licenses>
     <license>
