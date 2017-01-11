@@ -38,7 +38,7 @@ publish: git-is-clean git-is-master git-pull-needed
 		sed -i '' 's!<apigen\.version>.*</apigen\.version>!<apigen.version>'$(NEW_VERSION)'</apigen.version>!' apigen/src/test/projects/*/pom.xml && \
 		git commit -am '[skip ci][release:prepare] prepare release $(PACKAGE_NAME)-$(NEW_VERSION)' && \
 		git tag -m 'Preparing new release $(PACKAGE_NAME)-$(NEW_VERSION)' -a '$(PACKAGE_NAME)-$(NEW_VERSION)' && \
-		mvn clean test deploy && \
+		mvn clean test deploy -Prelease && \
 		mvn versions:set -DgenerateBackupPoms=false -DnewVersion=$(NEXT_SNAPSHOT) && \
 		sed -i '' 's!<apigen\.version>.*</apigen\.version>!<apigen.version>'$(NEXT_SNAPSHOT)'</apigen.version>!' apigen/src/test/projects/*/pom.xml && \
 		git commit -am '[skip ci][release:perform] prepare for next development iteration' && \
