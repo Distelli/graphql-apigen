@@ -44,6 +44,9 @@ public class ApiGenMojo extends AbstractMojo {
     @Parameter(name="guiceModuleName")
     private String guiceModuleName;
 
+    @Parameter(name="defaultPackageName", defaultValue = "com.graphql.generated")
+    private String defaultPackageName;
+
     private File makeAbsolute(File in) {
         if ( in.isAbsolute() ) return in;
         return new File(project.getBasedir(), in.toString());
@@ -80,6 +83,7 @@ public class ApiGenMojo extends AbstractMojo {
             ApiGen apiGen = new ApiGen.Builder()
                 .withOutputDirectory(outputDirectory.toPath())
                 .withGuiceModuleName(guiceModuleName)
+                .withDefaultPackageName(defaultPackageName)
                 .build();
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(cp);
             for ( org.springframework.core.io.Resource resource : resolver.getResources("classpath*:graphql-apigen-schema/*.graphql") ) {

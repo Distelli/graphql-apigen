@@ -21,10 +21,10 @@ public class TypeEntry {
     private Definition definition;
     private String packageName;
 
-    public TypeEntry(Definition definition, URL source) {
+    public TypeEntry(Definition definition, URL source, String defaultPackageName) {
         this.source = source;
         this.definition = definition;
-        this.packageName = getPackageName(getDirectives(definition));
+        this.packageName = getPackageName(getDirectives(definition), defaultPackageName);
     }
 
     public URL getSource() {
@@ -80,7 +80,7 @@ public class TypeEntry {
         return Collections.emptyList();
     }
 
-    private static String getPackageName(List<Directive> directives) {
+    private static String getPackageName(List<Directive> directives, String defaultPackageName) {
         String packageName = null;
         for ( Directive directive : directives ) {
             if ( ! "java".equals(directive.getName()) ) continue;
@@ -91,7 +91,7 @@ public class TypeEntry {
             }
             break;
         }
-        return ( null == packageName ) ? "com.graphql.generated" : packageName;
+        return ( null == packageName ) ? defaultPackageName : packageName;
     }
 
 }
