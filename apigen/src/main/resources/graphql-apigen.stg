@@ -128,18 +128,18 @@ import com.distelli.graphql.ResolverDataFetcher;
 import graphql.Scalars;
 import graphql.schema.*;
 import java.util.Arrays;
-// To support optional injection:
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import javax.inject.Provider;
+import java.util.Optional;
 
 public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
 <model.dataResolvers:{ it |
 <if(it.fieldType)>
-    @Inject(optional=true)
-    private <it.fieldType> <it.fieldName>;
+    @Inject
+    private Optional\<<it.fieldType>\> <it.fieldName>;
 <endif>}>
-    @Inject(optional=true)
-    private <model.name> _impl;
+    @Inject
+    private Optional\<<model.name>\> _impl;
     @Inject
     protected <model.name>TypeProvider() {}
     @Override
@@ -168,8 +168,8 @@ public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
                       new MethodDataFetcher(
                           "<it.name>",
                           <if(it.args)><model.name>.<it.ucname>Args.class<else>null<endif>,
-                          _impl),
-                      <it.dataResolver.fieldName>,
+                          _impl.orElse(null)),
+                      <it.dataResolver.fieldName>.orElse(null),
                       <it.dataResolver.listDepth>))
 <endif>
                 .build())}>
@@ -181,6 +181,10 @@ public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
 objectTypeProviderGuiceModule(model) ::= <<
         types.addBinding("<model.name>")
              .toProvider(<model.packageName>.<model.name>TypeProvider.class);
+        OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.class);
+<if(model.idField)>
+        OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.Resolver.class);
+<endif>
 
 >>
 
@@ -262,18 +266,10 @@ import com.distelli.graphql.ResolverDataFetcher;
 import graphql.Scalars;
 import graphql.schema.*;
 import java.util.Arrays;
-// To support optional injection:
-import com.google.inject.Inject;
+import javax.inject.Inject;
 import javax.inject.Provider;
 
 public class <model.name>TypeProvider implements Provider\<GraphQLInputObjectType> {
-<model.dataResolvers:{ it |
-<if(it.fieldType)>
-    @Inject(optional=true)
-    private <it.fieldType> <it.fieldName>;
-<endif>}>
-    @Inject(optional=true)
-    private <model.name> _impl;
     @Inject
     protected <model.name>TypeProvider() {}
     @Override
@@ -297,6 +293,7 @@ public class <model.name>TypeProvider implements Provider\<GraphQLInputObjectTyp
 inputObjectTypeProviderGuiceModule(model) ::= <<
         types.addBinding("<model.name>")
              .toProvider(<model.packageName>.<model.name>TypeProvider.class);
+        OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.class);
 
 >>
 
@@ -306,6 +303,7 @@ guiceModule(packageName, className, configure) ::= <<
 package <packageName>;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.multibindings.OptionalBinder;
 import graphql.schema.GraphQLType;
 
 public class <className> extends AbstractModule {
