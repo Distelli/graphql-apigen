@@ -6,8 +6,6 @@ import graphql.language.SchemaDefinition;
 import graphql.language.TypeDefinition;
 import graphql.parser.Parser;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +27,7 @@ public class ApiGen {
     private Path outputDirectory;
     private STGroup stGroup;
     private String guiceModuleName;
+    private String defaultPackageName;
     private Map<String, TypeEntry> generatedTypes = new LinkedHashMap<>();
     private Map<String, TypeEntry> referenceTypes = new HashMap<>();
     private List<TypeEntry> schemaDefinitions = new ArrayList<>();
@@ -37,6 +36,7 @@ public class ApiGen {
         private Path outputDirectory;
         private STGroup stGroup;
         private String guiceModuleName;
+        private String defaultPackageName;
 
         /**
          * (required)
@@ -67,6 +67,11 @@ public class ApiGen {
             return this;
         }
 
+        public Builder withDefaultPackageName(String defaultPackageName) {
+            this.defaultPackageName = defaultPackageName;
+            return this;
+        }
+
         /**
          * Create a new instances of ApiGen with the built parameters.
          *
@@ -84,6 +89,7 @@ public class ApiGen {
             throw new NullPointerException("The ApiGen outputDirectory must be specified");
         }
         guiceModuleName = builder.guiceModuleName;
+        defaultPackageName = builder.defaultPackageName;
         outputDirectory = builder.outputDirectory;
         stGroup = ( null == builder.stGroup )
             ? getDefaultSTGroup()
@@ -127,7 +133,7 @@ public class ApiGen {
             for ( Definition definition : doc.getDefinitions() ) {
                 if ( definition instanceof SchemaDefinition ) {
                     if ( generatedTypes == types ) {
-                        schemaDefinitions.add(new TypeEntry(definition, path));
+                        schemaDefinitions.add(new TypeEntry(definition, path, defaultPackageName));
                     }
                     continue;
                 } else if ( ! (definition instanceof TypeDefinition) ) {
@@ -138,7 +144,7 @@ public class ApiGen {
                         definition.getSourceLocation().getLine() + "," +
                         definition.getSourceLocation().getColumn() + "]");
                 }
-                TypeEntry newEntry = new TypeEntry(definition, path);
+                TypeEntry newEntry = new TypeEntry(definition, path, defaultPackageName);
                 TypeEntry oldEntry = referenceTypes.get(newEntry.getName());
 
                 if ( null != oldEntry ) {
