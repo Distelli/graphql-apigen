@@ -130,8 +130,10 @@ import graphql.schema.*;
 import java.util.Arrays;
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Named;
 import java.util.Optional;
 
+@Named
 public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
 <model.dataResolvers:{ it |
 <if(it.fieldType)>
@@ -268,7 +270,9 @@ import graphql.schema.*;
 import java.util.Arrays;
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Named;
 
+@Named
 public class <model.name>TypeProvider implements Provider\<GraphQLInputObjectType> {
     @Inject
     protected <model.name>TypeProvider() {}
