@@ -221,6 +221,32 @@ Putting this all together, we can implement the `QueryPosts` implementation as s
     }
 ```
 
+#### Using Spring instead of Guice
+If you want to use Spring to wire the components together instead of Guice, you need to 
+instruct Spring to include the generated code in a package-scan. Spring will find the `@Named`
+annotated components and will inject any dependencies (the type resolvers you implement, etc)
+
+For example, if your code was generated into the package `com.distelli.posts`, the spring configuration
+would look like this: 
+
+```java 
+@ComponentScan("com.distelli.posts")
+@Configuration
+public class MyAppConfig {
+        ...
+}                                   
+```
+
+To generate a mapping similar to the guice code above, you can add this to your spring configuration
+
+```java
+    @Bean
+    public Map<String, GraphQLType> graphqlTypeMap(List<Provider<? extends GraphQLType>> typeList) {
+        return typeList.stream().map(Provider::get).collect(Collectors.toMap(GraphQLType::getName, Function.identity()));
+    }
+```  
+This will take any GraphQLTypes and generate a map of their string name to their implementation.
+
 ### Getting started
 
 ##### How to use the latest release with Maven
