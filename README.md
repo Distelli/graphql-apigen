@@ -282,7 +282,15 @@ Generate the code with the following maven:
         <artifactId>graphql-apigen</artifactId>
         <version>${apigen.version}</version>
         <configuration>
-          <guiceModuleName>com.distelli.posts.PostsModule</guiceModuleName>
+          <!-- This is only needed when using Guice -->
+          <guiceModuleName>com.example.my.MyGuiceModule</guiceModuleName>
+          <!-- This is only needed if you omit the @java(package:"...")
+               annotations from your schema types. Using this feature
+               also means your GraphQL schema can NOT be depended upon
+               by GraphQL schemas defined in other maven projects. See:
+               https://github.com/Distelli/graphql-apigen/issues/5#issuecomment-275923555
+          -->
+          <defaultPackageName>com.example.my</defaultPackageName>
         </configuration>
         <executions>
           <execution>
@@ -322,6 +330,8 @@ Generate the code with the following maven:
 
 </project>
 ```
+
+Be sure to replace `com.example.*` above with the desired values.
 
 Place your GraphQL files in `schema/*.graphql`.
 
