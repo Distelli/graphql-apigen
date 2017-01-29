@@ -24,6 +24,7 @@ import org.apache.maven.model.Resource;
 import java.util.Collections;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 @Mojo(name="apigen",
       defaultPhase=LifecyclePhase.GENERATE_SOURCES,
@@ -86,7 +87,7 @@ public class ApiGenMojo extends AbstractMojo {
                 .withDefaultPackageName(defaultPackageName)
                 .build();
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(cp);
-            for ( org.springframework.core.io.Resource resource : resolver.getResources("classpath*:graphql-apigen-schema/*.graphql") ) {
+            for ( org.springframework.core.io.Resource resource : resolver.getResources("classpath*:graphql-apigen-schema/*.graphql{,s}") ) {
                 URL url = resource.getURL();
                 getLog().debug("Processing "+url);
                 apiGen.addForReference(url);
@@ -96,7 +97,7 @@ public class ApiGenMojo extends AbstractMojo {
             Resource schemaResource = new Resource();
             schemaResource.setTargetPath("graphql-apigen-schema");
             schemaResource.setFiltering(false);
-            schemaResource.setIncludes(Collections.singletonList("*.graphql"));
+            schemaResource.setIncludes(Arrays.asList("*.graphqls","*.graphql"));
             schemaResource.setDirectory(sourceDirectory.toString());
             project.addResource(schemaResource);
             project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
@@ -112,7 +113,7 @@ public class ApiGenMojo extends AbstractMojo {
     }
 
     private void findGraphql(File rootDir, VisitPath visitPath) throws IOException {
-        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**/*.graphql");
+        PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**/*.graphql{,s}");
         Files.walkFileTree(rootDir.toPath(), new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
