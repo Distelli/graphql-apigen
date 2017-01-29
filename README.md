@@ -271,7 +271,7 @@ Generate the code with the following maven:
 <project ...>
   ...
   <properties>
-    <apigen.version>2.0.0</apigen.version>
+    <apigen.version>2.1.0</apigen.version>
   </properties>
 
   <build>
