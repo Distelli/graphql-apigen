@@ -2,7 +2,8 @@
 
 Generate Java APIs with GraphQL Schemas in order to facilitate "schema first" development.
 
-This project is sponsored by the [Distelli Platform](http://www.distelli.com/).
+This project is sponsored by the [Distelli Platform](http://www.distelli.com/). Build and
+deploy automation tools with audit trails.
 
 ## NOTE: Work in progress
 
@@ -51,7 +52,7 @@ type MutatePosts @java(package:"com.distelli.posts") {
 }
 ```
 
-Notice that we annotate the types with a java package name. The above schema
+Notice that we annotate the types with a java package name.  The above schema
 will generate the following java **interfaces** in `target/generated-sources/apigen`
 (in the `com.distelli.posts` package):
 
@@ -63,8 +64,8 @@ will generate the following java **interfaces** in `target/generated-sources/api
 
 The `*.Resolver` interfaces are only generated if their is a field named "id". This
 interface may be implemented to resolve a `*.Unresolved` (only the id field defined)
-into a fully resolved implementation (all fields defined). All interfaces have
-"default" implementations that return null.
+into a fully resolved implementation (all fields defined). All interface methods
+have "default" implementations that return null.
 
 Each of these interfaces also have a default inner class named `*.Builder` and
 `*.Impl`. The `*.Builder` will have a no-argument constructor and a constructor
@@ -75,9 +76,13 @@ builder and a `build()` method that creates a `*.Impl`.
 Any field that takes arguments will cause a `*.<FieldName>Args` interface to be
 generated with methods for each input field.
 
+Any field that does NOT take arguments will generate method names prefixed with
+"get".
+
 Finally, the above schema also generates a Guice module `PostsModule` which adds to
 a `Map<String, GraphQLType>` multibinder (the name "PostsModule" comes from the
-filename which defines the schema).
+filename which defines the schema). See below for information about using Spring for
+Dependency Injection.
 
 Putting this all together, we can implement the `QueryPosts` implementation as such:
 
@@ -178,15 +183,18 @@ Putting this all together, we can implement the `QueryPosts` implementation as s
     }
 ```
 
-...and you can use Guice to wire it all together as such:
+...and you can use Guice to wire it all together as such (see below on
+using this from Spring):
 
 ```java
     public class MainModule implements AbstractModule {
         @Override
         protected void configure() {
+            // Create the "data" used by the implementations:
             Map<Integer, Post> posts = new LinkedHashMap<>();
             Map<Integer, Author> authors = new LinkedHashMap<>();
-            install(new PostsModule()); // The generated module.
+            // Install the generated module:
+            install(new PostsModule());
             // Declare our implementations:
             bind(Author.Resolver.class)
                 .toInstance(new AuthorResolver(authors));
@@ -221,13 +229,17 @@ Putting this all together, we can implement the `QueryPosts` implementation as s
     }
 ```
 
-#### Using Spring instead of Guice
+This example is also a unit test which can be found
+[here](apigen/src/test/projects/posts/src/test/java/com/disteli/posts/PostsTest.java)
+
+### Using Spring instead of Guice
+
 If you want to use Spring to wire the components together instead of Guice, you need to 
 instruct Spring to include the generated code in a package-scan. Spring will find the `@Named`
 annotated components and will inject any dependencies (the type resolvers you implement, etc)
 
-For example, if your code was generated into the package `com.distelli.posts`, the spring configuration
-would look like this: 
+For example, if your code was generated into the package `com.distelli.posts`, the spring
+configuration would look like this: 
 
 ```java 
 @ComponentScan("com.distelli.posts")
@@ -237,29 +249,83 @@ public class MyAppConfig {
 }                                   
 ```
 
-To generate a mapping similar to the guice code above, you can add this to your spring configuration
+To generate a mapping similar to the guice code above, you can add this to your spring
+configuration:
 
 ```java
     @Bean
     public Map<String, GraphQLType> graphqlTypeMap(List<Provider<? extends GraphQLType>> typeList) {
         return typeList.stream().map(Provider::get).collect(Collectors.toMap(GraphQLType::getName, Function.identity()));
     }
-```  
+```
+
 This will take any GraphQLTypes and generate a map of their string name to their implementation.
 
 ### Getting started
 
-##### How to use the latest release with Maven
+#### How to use the latest release with Maven
 
-Dependency:
+Generate the code with the following maven:
 
 ```xml
-  <dependency>
-    <groupId>com.distelli.graphql</groupId>
-    <artifactId>graphql-apigen-deps</artifactId>
-    <version>1.1.1</version>
-  </dependency>
+<project ...>
+  ...
+  <properties>
+    <apigen.version>2.0.0</apigen.version>
+  </properties>
 
+  <build>
+    <plugins>
+      ...
+      <plugin>
+        <groupId>com.distelli.graphql</groupId>
+        <artifactId>graphql-apigen</artifactId>
+        <version>${apigen.version}</version>
+        <configuration>
+          <guiceModuleName>com.distelli.posts.PostsModule</guiceModuleName>
+        </configuration>
+        <executions>
+          <execution>
+            <id>why-is-this-needed-who-knows</id>
+            <goals>
+              <goal>apigen</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    ...
+    <!-- Required by the generated code -->
+    <dependency>
+      <groupId>com.distelli.graphql</groupId>
+      <artifactId>graphql-apigen-deps</artifactId>
+      <version>${apigen.version}</version>
+    </dependency>
+
+    <!-- Optional, dependencies if using Guice for Dependency Injection -->
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <version>4.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.inject.extensions</groupId>
+      <artifactId>guice-multibindings</artifactId>
+      <version>4.0</version>
+    </dependency>
+
+  </dependencies>
+
+</project>
 ```
 
-###
+Place your GraphQL files in `schema/*.graphql`.
+
+#### TODO: Support gradle?
+
+File an [issue](https://github.com/Distelli/graphql-apigen/issues), or even better
+is to send a pull request :).
