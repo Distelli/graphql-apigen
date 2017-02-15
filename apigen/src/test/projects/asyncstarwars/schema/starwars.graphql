@@ -1,0 +1,28 @@
+enum Episode @java(package:"org.distelli.starwars") {
+    NEWHOPE,
+    EMPIRE,
+    JEDI
+}
+
+interface Character @java(package:"org.distelli.starwars") {
+    id: String!,
+    name: String,
+    friends: [Character],
+    appearsIn: [Episode],
+}
+
+type Human implements Character @java(package:"org.distelli.starwars") {
+    id: String!,
+    name: String,
+    friends: [Character],
+    appearsIn: [Episode],
+    homePlanet: String,
+}
+
+type Droid implements Character @java(package:"org.distelli.starwars") {
+    id: String!,
+    name: String,
+    friends: [Character],
+    appearsIn: [Episode],
+    primaryFunction: String,
+}

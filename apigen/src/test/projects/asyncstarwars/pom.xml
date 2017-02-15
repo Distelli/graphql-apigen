@@ -2,35 +2,58 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>test</groupId>
-  <artifactId>test-extends</artifactId>
+  <artifactId>test-starwars</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>test-extends</name>
+  <name>test-starwars</name>
 
-  <parent>
-    <groupId>test</groupId>
-    <artifactId>test-pom</artifactId>
-    <version>1.0-SNAPSHOT</version>
-  </parent>
+  <properties>
+    <apigen.version>2.1.1-SNAPSHOT</apigen.version>
+  </properties>
 
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.6.0</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.0.1</version>
       </plugin>
       <plugin>
         <groupId>com.distelli.graphql</groupId>
         <artifactId>graphql-apigen</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${apigen.version}</version>
+        <executions>
+          <execution>
+            <id>crap</id>
+            <goals>
+              <goal>asyncapigen</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>io.takari.maven.plugins</groupId>
         <artifactId>takari-lifecycle-plugin</artifactId>
+        <version>1.12.2</version>
+        <executions>
+          <execution>
+            <id>testProperties</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>testProperties</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
@@ -44,20 +67,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>test</groupId>
-      <artifactId>test-base</artifactId>
-      <version>1.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
       <groupId>com.distelli.graphql</groupId>
       <artifactId>graphql-apigen-deps</artifactId>
       <version>${apigen.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

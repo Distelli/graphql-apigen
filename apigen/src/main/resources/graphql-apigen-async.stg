@@ -1,0 +1,365 @@
+// See https://github.com/antlr/stringtemplate4/blob/master/doc/groups.md
+group apigen;
+
+//////////////////////////////////////////////////////////////////////
+// Define the objectType builder:
+objectTypeFileName(model) ::= "<if(model.objectType && model.idField)><model.name>.java<endif>"
+objectTypeGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+<if(model.idField)>
+import java.util.concurrent.CompletableFuture;
+import graphql.schema.DataFetchingEnvironment;
+<endif>
+
+public interface <model.name> {
+    public static class Builder {
+<model.fields:{ it |
+<if(!it.args)>
+
+        private <it.type> _<it.name>;
+<endif>}>
+        public Builder() {}
+        public Builder(<model.name> src) {
+<model.fields:{ it |
+<if(!it.args)>
+
+            _<it.name> = src.get<it.ucname>();
+<endif>}>
+        }
+
+<model.fields:{ it |
+<if(!it.args)>
+
+        public Builder with<it.ucname>(<it.type> _<it.name>) {
+            this._<it.name> = _<it.name>;
+            return this;
+        \}
+<endif>}>
+        public <model.name> build() {
+            return new Impl(this);
+        }
+    }
+    public static class Impl implements <model.name> {
+<model.fields:{ it |
+<if(!it.args)>
+
+        private <it.type> _<it.name>;
+<endif>}>
+        protected Impl(Builder builder) {
+<model.fields:{ it |
+<if(!it.args)>
+
+            this._<it.name> = builder._<it.name>;
+<endif>}>
+        }
+<model.fields:{ it |
+<if(!it.args)>
+
+        @Override
+        public <it.type> get<it.ucname>() {
+            return _<it.name>;
+        \}
+<endif>}>
+        @Override
+        public String toString() {
+            return "<model.name>{"
+<model.fields,[true]:{ it,isFirst |
+<if(!it.args)>
+
+                 + "<if(!isFirst)>, <endif><it.name>=" + _<it.name>
+<endif>}>
+
+                 + "}";
+        }
+        // TODO: equals(Object) & hashCode()
+    }
+<if(model.idField)>
+    public static class Unresolved implements <model.name> {
+        private <model.idField.type> _id;
+        public Unresolved(<model.idField.type> id) {
+            this._id = id;
+        }
+        @Override
+        public <model.idField.type> getId() {
+            return _id;
+        }
+        @Override
+        public String toString() {
+            return "<model.name>.Unresolved{"
+                 + "id=" + _id
+                 + "}";
+        }
+    }
+    public static interface AsyncResolver extends com.distelli.graphql.AsyncResolver\<<model.name>\> {
+        public CompletableFuture\<Object> resolve(final DataFetchingEnvironment env);
+    }
+<endif>
+<model.fields:{ it |
+
+<if(it.args)>
+    // TODO: extend any implemented interfaces...
+    interface <it.ucname>Args {
+<it.args:{ it |
+
+        default <it.type> get<it.ucname>() { return null; \}}>
+    \}
+    public default <it.type> <it.name>(<it.ucname>Args args) { return null; \}
+<else>
+    public default <it.type> get<it.ucname>() { return null; \}
+<endif>}>
+}
+
+>>
+
+//////////////////////////////////////////////////////////////////////
+// Define the object TypeProvider
+objectTypeProviderFileName(model) ::= "<if(model.objectType)><model.name>TypeProvider.java<endif>"
+objectTypeProviderGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+import com.distelli.graphql.AsyncResolverDataFetcher;
+import graphql.Scalars;
+import graphql.schema.*;
+import java.util.Arrays;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Named;
+import java.util.Optional;
+
+@Named
+public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
+<model.dataResolvers:{ it |
+<if(it.fieldType)>
+    @Inject
+    private Optional\<<it.fieldType>\> <it.fieldName>;
+<endif>}>
+    @Inject
+    protected <model.name>TypeProvider() {}
+    @Override
+    public GraphQLObjectType get() {
+        return GraphQLObjectType.newObject()
+            .name("<model.name>")
+<model.fields:{ it |
+
+            .field(GraphQLFieldDefinition.newFieldDefinition()
+                .type(<it.graphQLType>)
+                .name("<it.name>")
+<if(it.args)>
+                .argument(Arrays.asList(
+<it.args:{ it |
+
+                    GraphQLArgument.newArgument()
+                    .name("<it.name>")
+                    .type(<it.graphQLType>)
+<if(it.defaultValue)>
+                    .defaultValue(<it.defaultValue>)
+<endif>
+                    .build()}; separator=",\n">))
+<endif>
+<if(it.dataResolver)>
+                .dataFetcher(new AsyncResolverDataFetcher(<it.dataResolver.fieldName>.orElse(null)))
+<endif>
+                .build())}>
+            .build();
+    }
+}
+
+>>
+objectTypeProviderGuiceModule(model) ::= <<
+        types.addBinding("<model.name>")
+             .toProvider(<model.packageName>.<model.name>TypeProvider.class);
+<if(model.idField)>
+        OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.class);
+        OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.AsyncResolver.class);
+<endif>
+
+>>
+
+//////////////////////////////////////////////////////////////////////
+// Define the inputObjectType builder:
+inputObjectTypeFileName(model) ::= "<if(model.inputObjectType)><model.name>.java<endif>"
+inputObjectTypeGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+
+public interface <model.name> {
+    public static class Builder {
+<model.fields:{ it |
+
+        private <it.type> _<it.name>;}>
+        public Builder() {}
+        public Builder(<model.name> src) {
+<model.fields:{ it |
+
+            _<it.name> = src.get<it.ucname>();}>
+        }
+
+<model.fields:{ it |
+
+        public Builder with<it.ucname>(<it.type> _<it.name>) {
+            this._<it.name> = _<it.name>;
+            return this;
+        \}}>
+        public <model.name> build() {
+            return new Impl(this);
+        }
+    }
+    public static class Impl implements <model.name> {
+<model.fields:{ it |
+
+        private <it.type> _<it.name>;}>
+        protected Impl(Builder builder) {
+<model.fields:{ it |
+
+            this._<it.name> = builder._<it.name>;}>
+        }
+<model.fields:{ it |
+
+        @Override
+        public <it.type> get<it.ucname>() {
+            return _<it.name>;
+        \}}>
+        @Override
+        public String toString() {
+            return "<model.name>{"
+<model.fields,[true]:{ it,isFirst |
+
+                 + "<if(!isFirst)>, <endif><it.name>=" + _<it.name>}>
+
+                 + "}";
+        }
+        // TODO: equals(Object) & hashCode()
+    }
+<model.fields:{ it |
+
+    public default <it.type> get<it.ucname>() { return null; \}}>
+}
+
+>>
+//////////////////////////////////////////////////////////////////////
+// Define the object TypeProvider
+inputObjectTypeProviderFileName(model) ::= "<if(model.inputObjectType)><model.name>TypeProvider.java<endif>"
+inputObjectTypeProviderGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+import com.distelli.graphql.MethodDataFetcher;
+import com.distelli.graphql.ResolverDataFetcher;
+import graphql.Scalars;
+import graphql.schema.*;
+import java.util.Arrays;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Named;
+
+@Named
+public class <model.name>TypeProvider implements Provider\<GraphQLInputObjectType> {
+    @Inject
+    protected <model.name>TypeProvider() {}
+    @Override
+    public GraphQLInputObjectType get() {
+        return GraphQLInputObjectType.newInputObject()
+            .name("<model.name>")
+<model.fields:{ it |
+
+            .field(GraphQLInputObjectField.newInputObjectField()
+                .type(<it.graphQLType>)
+                .name("<it.name>")
+<if(it.defaultValue)>
+                .defaultValue(<it.defaultValue>)
+<endif>
+                .build())}>
+            .build();
+    }
+}
+
+>>
+inputObjectTypeProviderGuiceModule(model) ::= <<
+        types.addBinding("<model.name>")
+             .toProvider(<model.packageName>.<model.name>TypeProvider.class);
+        OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.class);
+>>
+
+//////////////////////////////////////////////////////////////////////
+// Define the GuiceModule:
+guiceModule(packageName, className, configure) ::= <<
+package <packageName>;
+import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
+import com.google.inject.multibindings.OptionalBinder;
+import graphql.schema.GraphQLType;
+
+public class <className> extends AbstractModule {
+    protected void configure() {
+        MapBinder\<String, GraphQLType> types =
+            MapBinder.newMapBinder(binder(), String.class, GraphQLType.class);
+        <configure>
+    }
+}
+
+>>
+
+//////////////////////////////////////////////////////////////////////
+// Define the interface builder:
+interfaceFileName(model) ::= "<if(model.interfaceType)><model.name>.java<endif>"
+interfaceGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+
+public interface <model.name> {
+<model.methods:{ it |
+    interface <it.ucname>Args {
+<it.args:{ it |
+        default <it.type> get<it.ucname>() { return null; \}}>
+    \}
+    public default <it.type> <it.name>(<it.ucname>Args args) {
+        return null;
+    \}}>
+<model.fields:{ it |
+
+<if(it.args)>
+    interface <it.ucname>Args {
+<it.args:{ it |
+
+        <it.type> get<it.ucname>();}>
+    \}
+    public <it.type> <it.name>(<it.ucname>Args args);
+<else>
+    public <it.type> get<it.ucname>();
+<endif>}>
+}
+
+>>
+
+//////////////////////////////////////////////////////////////////////
+// Define the enum builder:
+enumFileName(model) ::= "<if(model.enumType)><model.name>.java<endif>"
+enumGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+
+public enum <model.name> {
+<model.fields:{ it |
+
+    <it.name>,}>
+}
+
+>>

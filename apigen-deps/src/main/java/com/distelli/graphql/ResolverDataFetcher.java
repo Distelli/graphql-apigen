@@ -2,6 +2,7 @@ package com.distelli.graphql;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.DataFetchingEnvironmentImpl;
 import graphql.execution.batched.Batched;
 import graphql.execution.batched.BatchedDataFetcher;
 import java.util.List;
@@ -78,7 +79,7 @@ public class ResolverDataFetcher implements DataFetcher {
     public Object getUnbatched(DataFetchingEnvironment env) {
         if ( ! isBatched ) return fetcher.get(env);
         DataFetchingEnvironment envCopy =
-            new DataFetchingEnvironment(
+            new DataFetchingEnvironmentImpl(
                 Collections.singletonList(env.getSource()),
                 env.getArguments(),
                 env.getContext(),
@@ -105,7 +106,7 @@ public class ResolverDataFetcher implements DataFetcher {
         List<Object> result = new ArrayList<>();
         for ( Object source : sources ) {
             DataFetchingEnvironment envCopy =
-                new DataFetchingEnvironment(
+                new DataFetchingEnvironmentImpl(
                     source,
                     env.getArguments(),
                     env.getContext(),
