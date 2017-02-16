@@ -3,7 +3,7 @@ group apigen;
 
 //////////////////////////////////////////////////////////////////////
 // Define the objectType builder:
-objectTypeFileName(model) ::= "<if(model.objectType && model.idField)><model.name>.java<endif>"
+objectTypeFileName(model) ::= "<if(model.objectType)><model.name>.java<endif>"
 objectTypeGenerator(model) ::= <<
 package <model.packageName>;
 
@@ -94,8 +94,9 @@ public interface <model.name> {
                  + "}";
         }
     }
+
     public static interface AsyncResolver extends com.distelli.graphql.AsyncResolver\<<model.name>\> {
-        public CompletableFuture\<Object> resolve(final DataFetchingEnvironment env);
+        public CompletableFuture\<?> resolve(final DataFetchingEnvironment env);
     }
 <endif>
 <model.fields:{ it |
@@ -175,8 +176,8 @@ public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
 objectTypeProviderGuiceModule(model) ::= <<
         types.addBinding("<model.name>")
              .toProvider(<model.packageName>.<model.name>TypeProvider.class);
-<if(model.idField)>
         OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.class);
+<if(model.idField)>
         OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.AsyncResolver.class);
 <endif>
 
@@ -290,6 +291,7 @@ inputObjectTypeProviderGuiceModule(model) ::= <<
         types.addBinding("<model.name>")
              .toProvider(<model.packageName>.<model.name>TypeProvider.class);
         OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.class);
+
 >>
 
 //////////////////////////////////////////////////////////////////////

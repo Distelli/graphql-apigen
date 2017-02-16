@@ -10,7 +10,6 @@ import java.util.concurrent.ExecutionException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -25,12 +24,13 @@ import graphql.schema.GraphQLType;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS;
 import static graphql.execution.async.AsyncExecutionStrategy.parallel;
 import static java.util.Collections.emptyMap;
+import static java.util.Objects.nonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 
 public class PostsTest {
@@ -44,16 +44,16 @@ public class PostsTest {
     injector = setupInjector();
     initGraphQLAsync(injector, "QueryPosts", "MutatePosts");
     om = new ObjectMapper();
-    om.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+    om.enable(ORDER_MAP_ENTRIES_BY_KEYS);
   }
 
   @Test
   public void shouldRetrieveAllPosts() throws Exception {
     // Given
-    String query = "{posts{title author{firstName lastName}}}";
+    final String query = "{posts{title author{firstName lastName}}}";
 
     // When
-    CompletionStage<ExecutionResult> future =
+    final CompletionStage<ExecutionResult> future =
       graphQL.executeAsync(query, null, null, emptyMap());
 
     // Then
@@ -65,10 +65,10 @@ public class PostsTest {
   @Test
   public void shouldCreatePost() throws Exception {
     // Given
-    String query = "mutation{createPost(post:{title:\"NEW\" authorId:1}){title}}";
+    final String query = "mutation{createPost(post:{title:\"NEW\" authorId:1}){title}}";
 
     // When
-    CompletionStage<ExecutionResult> future =
+    final CompletionStage<ExecutionResult> future =
       graphQL.executeAsync(query, null, null, emptyMap());
 
     // Then
@@ -88,13 +88,9 @@ public class PostsTest {
     public CompletableFuture<Object> resolve(final DataFetchingEnvironment env) {
       if (env.getParentType().getName().equals("Post")) {
         final Post post = env.getSource();
-        if (post.getAuthor().getClass().equals(Author.Unresolved.class)) {
-          return CompletableFuture.completedFuture(authors.values()
-            .stream()
-            .filter(it -> it.getId() == post.getAuthor().getId())
-            .limit(1)
-            .iterator()
-            .next());
+        final Author author = post.getAuthor();
+        if (nonNull(author) && author.getClass().equals(Author.Unresolved.class)) {
+          return completedFuture(authors.get(author.getId()));
         }
       }
       return null;
@@ -200,13 +196,5 @@ public class PostsTest {
       e.printStackTrace();
     }
     return doc;
-  }
-
-  private void checkExecutionResult(ExecutionResult result) throws Exception {
-    if (null == result.getErrors() || result.getErrors().size() <= 0) return;
-    ObjectMapper om = new ObjectMapper();
-    om.enable(SerializationFeature.INDENT_OUTPUT);
-    String errors = om.writeValueAsString(result.getErrors());
-    fail(errors);
   }
 }
