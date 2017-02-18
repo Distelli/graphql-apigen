@@ -11,8 +11,8 @@ package <model.packageName>;
 
 import <it>;}>
 <if(model.idField)>
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import graphql.schema.DataFetchingEnvironment;
 <endif>
 
 public interface <model.name> {
@@ -94,9 +94,11 @@ public interface <model.name> {
                  + "}";
         }
     }
-
+    public static interface Resolver extends com.distelli.graphql.Resolver\<<model.name>\> {
+        public List\<<model.name>\> resolve(List\<<model.name>\> list);
+    }
     public static interface AsyncResolver extends com.distelli.graphql.AsyncResolver\<<model.name>\> {
-        public CompletableFuture\<?> resolve(final DataFetchingEnvironment env);
+        public CompletableFuture\<List\<<model.name>\>> resolve(List\<<model.name>\> list);
     }
 <endif>
 <model.fields:{ it |
@@ -125,7 +127,8 @@ package <model.packageName>;
 <model.imports:{ it |
 
 import <it>;}>
-import com.distelli.graphql.AsyncResolverDataFetcher;
+import com.distelli.graphql.MethodDataFetcher;
+import com.distelli.graphql.ResolverDataFetcher;
 import graphql.Scalars;
 import graphql.schema.*;
 import java.util.Arrays;
@@ -141,6 +144,8 @@ public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
     @Inject
     private Optional\<<it.fieldType>\> <it.fieldName>;
 <endif>}>
+    @Inject
+    private Optional\<<model.name>\> _impl;
     @Inject
     protected <model.name>TypeProvider() {}
     @Override
@@ -165,7 +170,13 @@ public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
                     .build()}; separator=",\n">))
 <endif>
 <if(it.dataResolver)>
-                .dataFetcher(new AsyncResolverDataFetcher(<it.dataResolver.fieldName>.orElse(null)))
+                .dataFetcher(new ResolverDataFetcher(
+                      new MethodDataFetcher(
+                          "<it.name>",
+                          <if(it.args)><model.name>.<it.ucname>Args.class<else>null<endif>,
+                          _impl.orElse(null)),
+                      <it.dataResolver.fieldName>.orElse(null),
+                      <it.dataResolver.listDepth>))
 <endif>
                 .build())}>
             .build();
@@ -178,6 +189,7 @@ objectTypeProviderGuiceModule(model) ::= <<
              .toProvider(<model.packageName>.<model.name>TypeProvider.class);
         OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.class);
 <if(model.idField)>
+        OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.Resolver.class);
         OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.AsyncResolver.class);
 <endif>
 

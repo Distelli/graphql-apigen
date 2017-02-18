@@ -3,6 +3,7 @@ package com.distelli.posts;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -17,7 +18,6 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import graphql.ExecutionResult;
 import graphql.GraphQLAsync;
-import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -25,9 +25,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS;
+import static com.google.common.collect.Lists.newArrayList;
 import static graphql.execution.async.AsyncExecutionStrategy.parallel;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Objects.nonNull;
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
@@ -77,6 +80,32 @@ public class PostsTest {
     assertTrue(result.contains("createPost"));
   }
 
+  public static class QueryPostsImpl implements QueryPosts {
+    @Override
+    public List<Post> getPosts() {
+      return emptyList();
+    }
+  }
+
+  public static class MutatePostsImpl implements MutatePosts {
+    @Override
+    public Post createPost(MutatePosts.CreatePostArgs args) {
+      InputPost req = args.getPost();
+      return new Post.Builder()
+        .withTitle(req.getTitle())
+        .withAuthor(new Author.Unresolved(req.getAuthorId()))
+        .build();
+    }
+
+    @Override
+    public Post upvotePost(MutatePosts.UpvotePostArgs args) {
+      return new Post.Builder()
+        .withId(args.getPostId())
+        .withVotes(1)
+        .build();
+    }
+  }
+
   public static class AuthorResolver implements Author.AsyncResolver {
     private Map<Integer, Author> authors;
 
@@ -85,15 +114,12 @@ public class PostsTest {
     }
 
     @Override
-    public CompletableFuture<Object> resolve(final DataFetchingEnvironment env) {
-      if (env.getParentType().getName().equals("Post")) {
-        final Post post = env.getSource();
-        final Author author = post.getAuthor();
-        if (nonNull(author) && author.getClass().equals(Author.Unresolved.class)) {
-          return completedFuture(authors.get(author.getId()));
-        }
+    public CompletableFuture<List<Author>> resolve(final List<Author> unresolved) {
+      if (!requireNonNull(unresolved).isEmpty()) {
+        final Author author = unresolved.get(0);
+        return completedFuture(unresolved.stream().map(u -> authors.get(u.getId())).collect(toList()));
       }
-      return null;
+      return completedFuture(newArrayList(authors.values())); // is query all
     }
   }
 
@@ -105,17 +131,25 @@ public class PostsTest {
     }
 
     @Override
-    public CompletableFuture<Object> resolve(final DataFetchingEnvironment env) {
-      if (env.containsArgument("post")) { // mutation
-        Map<String, Object> values = env.getArgument("post");
-        Post createVehicle = new Post.Builder()
-          .withId(posts.size() + 1)
-          .withTitle(values.get("title").toString())
-          .withAuthor(new Author.Unresolved((Integer)values.get("authorId")))
-          .build();
-        return completedFuture(createVehicle);
+    public CompletableFuture<List<Post>> resolve(final List<Post> unresolved) {
+      if (!requireNonNull(unresolved).isEmpty()) {
+        Post post = unresolved.get(0);
+        if (isNull(post.getId())) { // is create new post mutation
+          post = new Post.Builder(post).withId(posts.size() + 1).build();
+          posts.put(post.getId(), post);
+          return completedFuture(newArrayList(post));
+        }
+        return completedFuture(unresolved.stream().map(u -> {
+          Post resolved = posts.get(u.getId());
+          if (u instanceof Post) { // upvote
+            resolved = new Post.Builder(resolved).withVotes(resolved.getVotes() + 1).build();
+            posts.put(resolved.getId(), resolved);
+          }
+          return resolved;
+        }).collect(toList())); // is argument query by id
       }
-      return completedFuture(posts.values().stream().collect(toList())); // is query all
+
+      return completedFuture(newArrayList(posts.values())); // is query all
     }
   }
 
@@ -165,10 +199,10 @@ public class PostsTest {
       new AbstractModule() {
         @Override
         protected void configure() {
-          bind(Author.AsyncResolver.class)
-            .toInstance(new AuthorResolver(authors));
-          bind(Post.AsyncResolver.class)
-            .toInstance(new PostResolver(posts));
+          bind(Author.AsyncResolver.class).toInstance(new AuthorResolver(authors));
+          bind(Post.AsyncResolver.class).toInstance(new PostResolver(posts));
+          bind(MutatePosts.class).toInstance(new MutatePostsImpl());
+          bind(QueryPosts.class).toInstance(new QueryPostsImpl());
         }
       });
     return injector;
@@ -181,7 +215,7 @@ public class PostsTest {
 
     GraphQLSchema schema = GraphQLSchema.newSchema()
       .query((GraphQLObjectType) types.get(queryName))
-      .mutation((GraphQLObjectType)types.get(mutationName))
+      .mutation((GraphQLObjectType) types.get(mutationName))
       .build(new HashSet<>(types.values()));
     graphQL = new GraphQLAsync(schema, parallel(), parallel());
   }
