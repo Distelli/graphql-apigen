@@ -31,14 +31,12 @@ public class ApiGen {
     private Map<String, TypeEntry> generatedTypes = new LinkedHashMap<>();
     private Map<String, TypeEntry> referenceTypes = new HashMap<>();
     private List<TypeEntry> schemaDefinitions = new ArrayList<>();
-    private boolean isAsync = false;
 
     public static class Builder {
         private Path outputDirectory;
         private STGroup stGroup;
         private String guiceModuleName;
         private String defaultPackageName;
-        private String groupFileName = "graphql-apigen.stg";
 
         /**
          * (required)
@@ -74,11 +72,6 @@ public class ApiGen {
             return this;
         }
 
-        public Builder asAsync() {
-            this.groupFileName = "graphql-apigen-async.stg";
-            return this;
-        }
-
         /**
          * Create a new instances of ApiGen with the built parameters.
          *
@@ -99,7 +92,7 @@ public class ApiGen {
         defaultPackageName = builder.defaultPackageName;
         outputDirectory = builder.outputDirectory;
         stGroup = ( null == builder.stGroup )
-            ? getDefaultSTGroup(builder.groupFileName)
+            ? getDefaultSTGroup()
             : builder.stGroup;
     }
 
@@ -195,7 +188,6 @@ public class ApiGen {
                 STModel model = new STModel.Builder()
                     .withTypeEntry(entry)
                     .withReferenceTypes(referenceTypes)
-                    .asAsync(isAsync)
                     .build();
                 model.validate();
 
@@ -265,8 +257,7 @@ public class ApiGen {
         Files.write(path, content.getBytes(UTF_8));
     }
 
-    private STGroup getDefaultSTGroup(String groupFileName) throws IOException {
-        isAsync = groupFileName.endsWith("-async.stg");
-        return new STGroupFile(groupFileName);
+    private STGroup getDefaultSTGroup() throws IOException {
+        return new STGroupFile("graphql-apigen.stg");
     }
 }

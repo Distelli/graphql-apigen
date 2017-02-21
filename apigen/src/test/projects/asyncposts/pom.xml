@@ -39,7 +39,7 @@
           <execution>
             <id>crap</id>
             <goals>
-              <goal>asyncapigen</goal>
+              <goal>apigen</goal>
             </goals>
           </execution>
         </executions>

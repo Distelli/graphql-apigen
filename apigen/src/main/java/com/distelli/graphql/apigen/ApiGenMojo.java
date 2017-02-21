@@ -72,13 +72,6 @@ public class ApiGenMojo extends AbstractMojo {
         return new URLClassLoader(urls.toArray(new URL[urls.size()]));
     }
 
-    protected ApiGen.Builder buildApiGen() throws IOException {
-        return new ApiGen.Builder()
-          .withOutputDirectory(outputDirectory.toPath())
-          .withGuiceModuleName(guiceModuleName)
-          .withDefaultPackageName(defaultPackageName);
-    }
-
     @Override
     public void execute() {
         try {
@@ -88,7 +81,11 @@ public class ApiGenMojo extends AbstractMojo {
             getLog().debug("Running ApiGen\n\tsourceDirectory=" + sourceDirectory +
                            "\n\toutputDirectory=" + outputDirectory);
             ClassLoader cp = getCompileClassLoader();
-            ApiGen apiGen = buildApiGen().build();
+            ApiGen apiGen = new ApiGen.Builder()
+              .withOutputDirectory(outputDirectory.toPath())
+              .withGuiceModuleName(guiceModuleName)
+              .withDefaultPackageName(defaultPackageName)
+              .build();
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(cp);
             for ( org.springframework.core.io.Resource resource : resolver.getResources("classpath*:graphql-apigen-schema/*.graphql{,s}") ) {
                 URL url = resource.getURL();

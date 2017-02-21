@@ -49,17 +49,12 @@ public class STModel {
     public static class Builder {
         private TypeEntry typeEntry;
         private Map<String, TypeEntry> referenceTypes;
-        private boolean isAsync = false;
         public Builder withTypeEntry(TypeEntry typeEntry) {
             this.typeEntry = typeEntry;
             return this;
         }
         public Builder withReferenceTypes(Map<String, TypeEntry> referenceTypes) {
             this.referenceTypes = referenceTypes;
-            return this;
-        }
-        public Builder asAsync(boolean asAsync) {
-            this.isAsync = asAsync;
             return this;
         }
         public STModel build() {
@@ -70,6 +65,9 @@ public class STModel {
         public String fieldName;
         public String fieldType;
         public int listDepth;
+        public String getFieldTypeAsync() {
+            return fieldType.replace(".", ".Async");
+        }
     }
     public static class Arg {
         public String name;
@@ -106,11 +104,9 @@ public class STModel {
     private List<String> imports;
     private Field idField;
     private boolean gotIdField = false;
-    private boolean isAsync = false;
     private STModel(Builder builder) {
         this.typeEntry = builder.typeEntry;
         this.referenceTypes = builder.referenceTypes;
-        this.isAsync = builder.isAsync;
     }
 
     public void validate() {
@@ -326,7 +322,7 @@ public class STModel {
             TypeEntry typeEntry = referenceTypes.get(typeName);
             if ( !typeEntry.hasIdField() ) return null;
             DataResolver resolver = new DataResolver();
-            resolver.fieldType = typeName + (isAsync ? ".AsyncResolver" : ".Resolver");
+            resolver.fieldType = typeName + ".Resolver";
             resolver.fieldName = "_" + lcFirst(typeName) + "Resolver";
             return resolver;
         } else {
