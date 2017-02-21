@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import graphql.execution.batched.Batched;
 import graphql.execution.batched.BatchedDataFetcher;
@@ -13,14 +12,13 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingEnvironmentImpl;
 
-import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 public class ResolverDataFetcher implements DataFetcher {
     private DataFetcher fetcher;
-    private Resolver resolver;
-    private AsyncResolver asyncResolver;
+    private Resolver<Object> resolver;
+    private AsyncResolver<Object> asyncResolver;
     private boolean isBatched;
     private int listDepth;
 
@@ -50,19 +48,20 @@ public class ResolverDataFetcher implements DataFetcher {
     public Object get(DataFetchingEnvironment env) {
         List<Object> unresolved = new ArrayList<>();
         Object result;
-        final int depth = listDepth;
+        int depth = listDepth;
         if ( env.getSource() instanceof List ) { // batched.
             result = getBatched(env);
-            if (nonNull(resolver) || nonNull(asyncResolver)) addUnresolved(unresolved, result, depth + 1);
+            if (nonNull(resolver) || nonNull(asyncResolver)) addUnresolved(unresolved, result, ++depth);
         } else {
             result = getUnbatched(env);
             if (nonNull(resolver) || nonNull(asyncResolver)) addUnresolved(unresolved, result, depth);
         }
         if (isNull(resolver) && isNull(asyncResolver)) return result;
+        final int finalDepth = depth;
         return isNull(asyncResolver) ?
           replaceResolved(result, resolver.resolve(unresolved).iterator(), depth) :
           asyncResolver.resolve(unresolved)
-            .thenApplyAsync(resolved -> replaceResolved(result, List.class.cast(resolved).iterator(), depth));
+            .thenApplyAsync(resolved -> replaceResolved(result, resolved.iterator(), finalDepth));
     }
 
     public Object replaceResolved(Object result, Iterator<Object> resolved, int depth) {
@@ -72,7 +71,11 @@ public class ResolverDataFetcher implements DataFetcher {
         List<Object> resolvedResults = new ArrayList<>();
         if ( null == result ) return null;
         final List list = (List) result;
-        if (list.isEmpty()) return newArrayList(resolved);
+        if (list.isEmpty() && !isBatched) {
+            final ArrayList resolvedList = new ArrayList();
+            resolved.forEachRemaining(resolvedList::add);
+            return resolvedList;
+        }
         for ( Object elm : list ) {
             resolvedResults.add(replaceResolved(elm, resolved, depth-1));
         }
@@ -112,7 +115,7 @@ public class ResolverDataFetcher implements DataFetcher {
     }
 
     public List<Object> getBatched(DataFetchingEnvironment env) {
-        List sources = (List)env.getSource();
+        List sources = env.getSource();
         if ( isBatched ) {
             Object result = fetcher.get(env);
             if ( !(result instanceof List) || ((List)result).size() != sources.size() ) {
