@@ -25,26 +25,6 @@ public class AsyncApiGenMojoTest {
     }
 
     @Test
-    public void testBasic() throws Exception {
-        File basedir = resources.getBasedir("asyncbasic");
-        MavenExecutionResult result = mavenRuntime
-            .forProject(basedir)
-            .execute("clean", "test");
-
-        result.assertErrorFreeLog();
-    }
-
-    @Test
-    public void testStarwars() throws Exception {
-        File basedir = resources.getBasedir("asyncstarwars");
-        MavenExecutionResult result = mavenRuntime
-            .forProject(basedir)
-            .execute("clean", "compile");
-
-        result.assertErrorFreeLog();
-    }
-
-    @Test
     public void testPosts() throws Exception {
         File basedir = resources.getBasedir("asyncposts");
         MavenExecutionResult result = mavenRuntime

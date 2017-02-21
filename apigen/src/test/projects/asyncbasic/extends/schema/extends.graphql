@@ -1,3 +1,0 @@
-type Extends @java(package:"test") {
-    base: Base
-}
