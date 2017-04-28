@@ -173,6 +173,11 @@ public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
                           _impl.orElse(null)),
                       <it.dataResolver.fieldName>.orElse(null),
                       <it.dataResolver.listDepth>))
+<else>
+                .dataFetcher(new MethodDataFetcher(
+                    "<it.name>",
+                    <if(it.args)><model.name>.<it.ucname>Args.class<else>null<endif>,
+                    _impl.orElse(null)))
 <endif>
                 .build())}>
             .build();
