@@ -9,7 +9,7 @@
   <name>test-starwars</name>
 
   <properties>
-    <apigen.version>2.2.0</apigen.version>
+    <apigen.version>2.2.1-SNAPSHOT</apigen.version>
   </properties>
 
   <build>
