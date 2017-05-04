@@ -4,6 +4,8 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.execution.batched.Batched;
 import graphql.execution.batched.BatchedDataFetcher;
+import graphql.schema.DataFetchingEnvironmentImpl;
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,7 +80,7 @@ public class ResolverDataFetcher implements DataFetcher {
     public Object getUnbatched(DataFetchingEnvironment env) {
         if ( ! isBatched ) return fetcher.get(env);
         DataFetchingEnvironment envCopy =
-            new DataFetchingEnvironment(
+            new DataFetchingEnvironmentImpl(
                 Collections.singletonList(env.getSource()),
                 env.getArguments(),
                 env.getContext(),
@@ -105,7 +107,7 @@ public class ResolverDataFetcher implements DataFetcher {
         List<Object> result = new ArrayList<>();
         for ( Object source : sources ) {
             DataFetchingEnvironment envCopy =
-                new DataFetchingEnvironment(
+                new DataFetchingEnvironmentImpl(
                     source,
                     env.getArguments(),
                     env.getContext(),
