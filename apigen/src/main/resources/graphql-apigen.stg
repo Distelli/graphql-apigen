@@ -12,9 +12,10 @@ package <model.packageName>;
 import <it>;}>
 <if(model.idField)>
 import java.util.List;
+import com.distelli.graphql.ResolveDataFetchingEnvironment;
 <endif>
 
-public interface <model.name> {
+public interface <model.name> extends ResolveDataFetchingEnvironment\<<model.name>\> {
     public static class Builder {
 <model.fields:{ it |
 <if(!it.args)>
@@ -76,6 +77,11 @@ public interface <model.name> {
         }
         // TODO: equals(Object) & hashCode()
     }
+
+    public default <model.name> resolve(DataFetchingEnvironment env) {
+        return this;
+    }
+
 <if(model.idField)>
     public static class Unresolved implements <model.name> {
         private <model.idField.type> _id;

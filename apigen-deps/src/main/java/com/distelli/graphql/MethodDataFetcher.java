@@ -1,19 +1,19 @@
 // Nearly identical to graphql.schema.PropertyDataFetcher, but deals with arguments.
 package com.distelli.graphql;
 
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLFieldsContainer;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
-import java.lang.reflect.InvocationHandler;
 import java.util.Map;
+
+import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
 
 import static graphql.Scalars.GraphQLBoolean;
 
@@ -37,6 +37,9 @@ public class MethodDataFetcher implements DataFetcher {
     public Object get(DataFetchingEnvironment env) {
         Object source = ( null != impl ) ? impl : env.getSource();
         if (source == null) return null;
+        if (source instanceof ResolveDataFetchingEnvironment) {
+            source = ((ResolveDataFetchingEnvironment)source).resolve(env);
+        }
         return getMethodViaGetter(source, env.getFieldType(), getFieldType(env.getParentType()), env.getArguments());
     }
 
