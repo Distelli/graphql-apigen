@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.inject.multibindings.MapBinder;
 import javax.inject.Singleton;
 import java.util.concurrent.atomic.AtomicInteger;
+import graphql.schema.DataFetchingEnvironment;
 import static org.junit.Assert.*;
 
 public class PostsTest {
@@ -32,11 +33,22 @@ public class PostsTest {
     public static class MutatePostsImpl implements MutatePosts {
         private AtomicInteger nextPostId = new AtomicInteger(5);
         private Map<Integer, Post> posts;
+        private DataFetchingEnvironment env;
         public MutatePostsImpl(Map<Integer, Post> posts) {
             this.posts = posts;
         }
+
+        @Override
+        public MutatePostsImpl resolve(DataFetchingEnvironment env) {
+            this.env = env;
+            return this;
+        }
+
         @Override
         public Post createPost(MutatePosts.CreatePostArgs args) {
+            if ( ! "authorized-user".equals(env.getContext()) ) {
+                throw new java.security.AccessControlException("context MUST be authorized-user");
+            }
             InputPost req = args.getPost();
             Post.Builder postBuilder = new Post.Builder()
                 .withTitle(req.getTitle())
@@ -174,7 +186,9 @@ public class PostsTest {
         om.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
 
         // Using GraphQL Mutation:
-        ExecutionResult result = graphQL.execute("mutation{createPost(post:{title:\"NEW\" authorId:1}){title}}");
+        ExecutionResult result = graphQL.execute(
+            "mutation{createPost(post:{title:\"NEW\" authorId:1}){title}}",
+            "authorized-user");
         checkExecutionResult(result);
         assertEquals("{\"createPost\":{\"title\":\"NEW\"}}", om.writeValueAsString(result.getData()));
 
