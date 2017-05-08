@@ -12,8 +12,9 @@ package <model.packageName>;
 import <it>;}>
 <if(model.idField)>
 import java.util.List;
-import com.distelli.graphql.ResolveDataFetchingEnvironment;
 <endif>
+import com.distelli.graphql.ResolveDataFetchingEnvironment;
+import graphql.schema.DataFetchingEnvironment;
 
 public interface <model.name> extends ResolveDataFetchingEnvironment\<<model.name>\> {
     public static class Builder {
@@ -274,11 +275,8 @@ package <model.packageName>;
 <model.imports:{ it |
 
 import <it>;}>
-import com.distelli.graphql.MethodDataFetcher;
-import com.distelli.graphql.ResolverDataFetcher;
 import graphql.Scalars;
 import graphql.schema.*;
-import java.util.Arrays;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Named;
