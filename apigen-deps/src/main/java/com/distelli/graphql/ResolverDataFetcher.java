@@ -87,7 +87,10 @@ public class ResolverDataFetcher implements DataFetcher {
                 env.getFields(),
                 env.getFieldType(),
                 env.getParentType(),
-                env.getGraphQLSchema());
+                env.getGraphQLSchema(),
+                    env.getFragmentsByName(),
+                    env.getExecutionId(),
+                    env.getSelectionSet());
         Object result = fetcher.get(envCopy);
         if ( !(result instanceof List) || ((List)result).size() != 1 ) {
             throw new IllegalStateException("Batched fetcher "+fetcher+" expected to return list of 1");
@@ -114,7 +117,10 @@ public class ResolverDataFetcher implements DataFetcher {
                     env.getFields(),
                     env.getFieldType(),
                     env.getParentType(),
-                    env.getGraphQLSchema());
+                    env.getGraphQLSchema(),
+                        env.getFragmentsByName(),
+                        env.getExecutionId(),
+                        env.getSelectionSet());
             result.add(fetcher.get(envCopy));
         }
         return result;
