@@ -21,6 +21,7 @@ public class MethodDataFetcher implements DataFetcher {
     private final String propertyName;
     private final Class argType;
     private final Object impl;
+    private String graphQLPropertyName = null;
 
     public MethodDataFetcher(String propertyName, Class argType, Object impl) {
         if ( null != argType ) {
@@ -31,6 +32,11 @@ public class MethodDataFetcher implements DataFetcher {
         this.propertyName = propertyName;
         this.argType = argType;
         this.impl = impl;
+    }
+    
+    public MethodDataFetcher(String propertyName, Class argType, Object impl, String graphQLPropertyName) {
+    		this(propertyName, argType, impl);
+    		this.graphQLPropertyName = graphQLPropertyName;
     }
 
     @Override
@@ -45,7 +51,13 @@ public class MethodDataFetcher implements DataFetcher {
 
     private GraphQLFieldDefinition getFieldType(GraphQLType type) {
         if ( type instanceof GraphQLFieldsContainer ) {
-            return ((GraphQLFieldsContainer)type).getFieldDefinition(propertyName);
+        		GraphQLFieldDefinition fieldType = ((GraphQLFieldsContainer)type).getFieldDefinition(propertyName);
+        		
+        		if (null == fieldType && null != this.graphQLPropertyName) {
+        			fieldType = ((GraphQLFieldsContainer)type).getFieldDefinition(graphQLPropertyName);
+        		}
+        		
+        		return fieldType;
         }
         return null;
     }
