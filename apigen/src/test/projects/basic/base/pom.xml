@@ -23,6 +23,9 @@
       <plugin>
         <groupId>com.distelli.graphql</groupId>
         <artifactId>graphql-apigen</artifactId>
+        <configuration>
+          <guiceModuleName>test.BaseModule</guiceModuleName>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>io.takari.maven.plugins</groupId>
@@ -43,6 +46,16 @@
       <groupId>com.distelli.graphql</groupId>
       <artifactId>graphql-apigen-deps</artifactId>
       <version>${apigen.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <version>4.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.inject.extensions</groupId>
+      <artifactId>guice-multibindings</artifactId>
+      <version>4.1.0</version>
     </dependency>
   </dependencies>
 </project>

@@ -1,4 +1,5 @@
 
 type Extends @java(package:"test") {
-    base: Base
+    base: Base,
+    alpha: Alphabet,
 }
