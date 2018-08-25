@@ -61,11 +61,17 @@ public class STModel {
             return new STModel(this);
         }
     }
+
     public static class DataResolver {
         public String fieldName;
         public String fieldType;
         public int listDepth;
     }
+
+    public static class Interface {
+        public String type;
+    }
+
     public static class Arg {
         public String name;
         public String type;
@@ -98,6 +104,7 @@ public class STModel {
     private TypeEntry typeEntry;
     private Map<String, TypeEntry> referenceTypes;
     private List<Field> fields;
+    public List<Interface> interfaces;
     private List<String> imports;
     private Field idField;
     private boolean gotIdField = false;
@@ -113,6 +120,7 @@ public class STModel {
         // these throw if there are any inconsistencies...
         getFields();
         getImports();
+        getInterfaces();
     }
 
     public boolean isObjectType() {
@@ -176,6 +184,27 @@ public class STModel {
             gotIdField = true;
         }
         return idField;
+    }
+
+    public List<Interface> getInterfaces() {
+
+        interfaces = new ArrayList<>();
+
+        if (!isObjectType()) {
+            return interfaces;
+        }
+
+        ObjectTypeDefinition objectTypeDefinition = (ObjectTypeDefinition) typeEntry.getDefinition();
+
+        List<Type> interfaceTypes = objectTypeDefinition.getImplements();
+
+        for (Type anInterfaceType : interfaceTypes) {
+            Interface anInterface = new Interface();
+            anInterface.type = toJavaTypeName(anInterfaceType);
+            interfaces.add(anInterface);
+        }
+
+        return interfaces;
     }
 
     public List<DataResolver> getDataResolvers() {

@@ -16,7 +16,7 @@ import java.util.List;
 import com.distelli.graphql.ResolveDataFetchingEnvironment;
 import graphql.schema.DataFetchingEnvironment;
 
-public interface <model.name> extends ResolveDataFetchingEnvironment\<<model.name>\> {
+public interface <model.name> extends ResolveDataFetchingEnvironment\<<model.name>\><model.interfaces:{ it |<if(it.type)>, <it.type><endif>}> {
     public static class Builder {
 <model.fields:{ it |
 <if(!it.args)>
