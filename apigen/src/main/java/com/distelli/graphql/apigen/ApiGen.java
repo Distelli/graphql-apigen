@@ -27,6 +27,7 @@ public class ApiGen {
     private Path outputDirectory;
     private STGroup stGroup;
     private String guiceModuleName;
+    private String springModuleName;
     private String defaultPackageName;
     private Map<String, TypeEntry> generatedTypes = new LinkedHashMap<>();
     private Map<String, TypeEntry> referenceTypes = new HashMap<>();
@@ -36,6 +37,7 @@ public class ApiGen {
         private Path outputDirectory;
         private STGroup stGroup;
         private String guiceModuleName;
+        private String springModuleName;
         private String defaultPackageName;
 
         /**
@@ -67,6 +69,11 @@ public class ApiGen {
             return this;
         }
 
+        public Builder withSpringModuleName(String springModuleName) {
+            this.springModuleName = springModuleName;
+            return this;
+        }
+
         public Builder withDefaultPackageName(String defaultPackageName) {
             this.defaultPackageName = defaultPackageName;
             return this;
@@ -89,6 +96,8 @@ public class ApiGen {
             throw new NullPointerException("The ApiGen outputDirectory must be specified");
         }
         guiceModuleName = builder.guiceModuleName;
+        springModuleName = builder.springModuleName;
+
         defaultPackageName = builder.defaultPackageName;
         outputDirectory = builder.outputDirectory;
         stGroup = ( null == builder.stGroup )
@@ -200,11 +209,16 @@ public class ApiGen {
                     String content = stGroup.getInstanceOf(generatorName+"Generator")
                         .add("model", model)
                         .render();
-                    if ( stGroup.isDefined(generatorName + "GuiceModule") ) {
+                    if ( guiceModuleName != null && stGroup.isDefined(generatorName + "GuiceModule") ) {
                         moduleBuilder.append(stGroup.getInstanceOf(generatorName+"GuiceModule")
                                              .add("model", model)
                                              .render());
+                    } else if ( springModuleName != null && stGroup.isDefined(generatorName + "SpringModule") ) {
+                        moduleBuilder.append(stGroup.getInstanceOf(generatorName+"SpringModule")
+                                .add("model", model)
+                                .render());
                     }
+
                     writeFile(Paths.get(directory.toString(), fileName),
                               content);
                 }
@@ -216,13 +230,23 @@ public class ApiGen {
         if ( moduleBuilder.length() > 0 && guiceModuleName != null && stGroup.isDefined("guiceModule") ) {
             PackageClassName packageClassName = getPackageClassName(guiceModuleName);
             String content = stGroup.getInstanceOf("guiceModule")
-                .add("packageName", packageClassName.packageName)
-                .add("className", packageClassName.className)
-                .add("configure", moduleBuilder.toString())
-                .render();
+                    .add("packageName", packageClassName.packageName)
+                    .add("className", packageClassName.className)
+                    .add("configure", moduleBuilder.toString())
+                    .render();
             writeFile(Paths.get(getDirectory(packageClassName.packageName).toString(),
-                                packageClassName.className+".java"),
-                      content);
+                    packageClassName.className+".java"),
+                    content);
+        } else if ( moduleBuilder.length() > 0 && springModuleName != null && stGroup.isDefined("springModule") ) {
+            PackageClassName packageClassName = getPackageClassName(springModuleName);
+            String content = stGroup.getInstanceOf("springModule")
+                    .add("packageName", packageClassName.packageName)
+                    .add("className", packageClassName.className)
+                    .add("body", moduleBuilder.toString())
+                    .render();
+            writeFile(Paths.get(getDirectory(packageClassName.packageName).toString(),
+                    packageClassName.className+".java"),
+                    content);
         }
     }
 

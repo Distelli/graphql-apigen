@@ -150,7 +150,7 @@ public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
     @Inject
     private Optional\<<model.name>\> _impl;
     @Inject
-    protected <model.name>TypeProvider() {}
+    public <model.name>TypeProvider() {}
     @Override
     public GraphQLObjectType get() {
         return GraphQLObjectType.newObject()
@@ -200,6 +200,19 @@ objectTypeProviderGuiceModule(model) ::= <<
         OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.Resolver.class);
 <endif>
 
+>>
+
+objectTypeProviderSpringModule(model) ::= <<
+    @Bean
+    public <model.packageName>.<model.name>TypeProvider _<model.name>TypeProvider(){
+      return new <model.packageName>.<model.name>TypeProvider();
+    }
+   <if(model.idField)>
+    @Bean
+    public <model.packageName>.<model.name>.Resolver _<model.name>Resolver(){
+      return list -> list;
+    }
+   <endif>
 >>
 
 //////////////////////////////////////////////////////////////////////
@@ -284,7 +297,7 @@ import javax.inject.Named;
 @Named
 public class <model.name>TypeProvider implements Provider\<GraphQLInputObjectType> {
     @Inject
-    protected <model.name>TypeProvider() {}
+    public <model.name>TypeProvider() {}
     @Override
     public GraphQLInputObjectType get() {
         return GraphQLInputObjectType.newInputObject()
@@ -310,6 +323,13 @@ inputObjectTypeProviderGuiceModule(model) ::= <<
 
 >>
 
+inputObjectTypeProviderSpringModule(model) ::= <<
+    @Bean
+    public <model.packageName>.<model.name>TypeProvider _<model.name>TypeProvider(){
+      return new <model.packageName>.<model.name>TypeProvider();
+    }
+>>
+
 //////////////////////////////////////////////////////////////////////
 // Define the GuiceModule:
 guiceModule(packageName, className, configure) ::= <<
@@ -327,6 +347,20 @@ public class <className> extends AbstractModule {
     }
 }
 
+>>
+
+//////////////////////////////////////////////////////////////////////
+// Define the SpringModule:
+springModule(packageName, className, body) ::= <<
+package <packageName>;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class <className> {
+<body>
+}
 >>
 
 //////////////////////////////////////////////////////////////////////

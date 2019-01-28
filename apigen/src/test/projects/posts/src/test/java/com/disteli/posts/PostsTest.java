@@ -151,22 +151,22 @@ public class PostsTest {
                   .withAuthor(new Author.Unresolved(2))
                   .build());
 
-        Injector injector = Guice.createInjector(
-            new PostsModule(),
-            new AbstractModule() {
-                @Override
-                protected void configure() {
-                    bind(Author.Resolver.class)
-                        .toInstance(new AuthorResolver(authors));
-                    bind(Post.Resolver.class)
-                        .toInstance(new PostResolver(posts));
-                    bind(MutatePosts.class)
-                        .toInstance(new MutatePostsImpl(posts));
-                    bind(QueryPosts.class)
-                        .toInstance(new QueryPostsImpl(posts));
-                }
-            });
-        return injector;
+//        Injector injector = Guice.createInjector(
+//            new PostsModule(),
+//            new AbstractModule() {
+//                @Override
+//                protected void configure() {
+//                    bind(Author.Resolver.class)
+//                        .toInstance(new AuthorResolver(authors));
+//                    bind(Post.Resolver.class)
+//                        .toInstance(new PostResolver(posts));
+//                    bind(MutatePosts.class)
+//                        .toInstance(new MutatePostsImpl(posts));
+//                    bind(QueryPosts.class)
+//                        .toInstance(new QueryPostsImpl(posts));
+//                }
+//            });
+        return null;
     }
 
     @Test
