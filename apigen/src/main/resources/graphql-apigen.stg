@@ -149,8 +149,7 @@ public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
 <endif>}>
     @Inject
     private Optional\<<model.name>\> _impl;
-    @Inject
-    public <model.name>TypeProvider() {}
+
     @Override
     public GraphQLObjectType get() {
         return GraphQLObjectType.newObject()
@@ -296,8 +295,7 @@ import javax.inject.Named;
 
 @Named
 public class <model.name>TypeProvider implements Provider\<GraphQLInputObjectType> {
-    @Inject
-    public <model.name>TypeProvider() {}
+
     @Override
     public GraphQLInputObjectType get() {
         return GraphQLInputObjectType.newInputObject()
