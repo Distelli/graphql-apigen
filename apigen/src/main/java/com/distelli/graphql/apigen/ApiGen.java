@@ -213,12 +213,7 @@ public class ApiGen {
                         moduleBuilder.append(stGroup.getInstanceOf(generatorName+"GuiceModule")
                                              .add("model", model)
                                              .render());
-                    } else if ( springModuleName != null && stGroup.isDefined(generatorName + "SpringModule") ) {
-                        moduleBuilder.append(stGroup.getInstanceOf(generatorName+"SpringModule")
-                                .add("model", model)
-                                .render());
                     }
-
                     writeFile(Paths.get(directory.toString(), fileName),
                               content);
                 }
@@ -237,12 +232,31 @@ public class ApiGen {
             writeFile(Paths.get(getDirectory(packageClassName.packageName).toString(),
                     packageClassName.className+".java"),
                     content);
-        } else if ( moduleBuilder.length() > 0 && springModuleName != null && stGroup.isDefined("springModule") ) {
+        } else if (springModuleName != null && stGroup.isDefined("springModule") ) {
             PackageClassName packageClassName = getPackageClassName(springModuleName);
+            final String body = " /*\n" +
+                    "       Please insert to your graphQL server class:\n" +
+                    "\n" +
+                    "           @Autowired\n" +
+                    "           List<Provider<? extends GraphQLType>> graphQLTypes;\n" +
+                    "\n" +
+                    "           @Autowired\n" +
+                    "           BeanFactory beanFactory;\n" +
+                    "                   Map<String, GraphQLType> graphqlTypeMap;\n" +
+                    "\n" +
+                    "           @PostConstruct\n" +
+                    "           public void initGraphQLServer(){\n" +
+                    "              graphqlTypeMap = (Map<String, GraphQLType>)beanFactory.getBean(\"graphqlTypeMap\", graphQLTypes);\n" +
+                    "           }\n" +
+                    "\n" +
+                    "       Note: GraphQLServer class is not been generated because there is no one implementation for that class,\n" +
+                    "             the comments above are required in-order to generate schema files\n" +
+                    "     */";
+
             String content = stGroup.getInstanceOf("springModule")
                     .add("packageName", packageClassName.packageName)
                     .add("className", packageClassName.className)
-                    .add("body", moduleBuilder.toString())
+                    .add("body",body)
                     .render();
             writeFile(Paths.get(getDirectory(packageClassName.packageName).toString(),
                     packageClassName.className+".java"),

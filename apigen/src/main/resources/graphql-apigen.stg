@@ -352,12 +352,26 @@ public class <className> extends AbstractModule {
 springModule(packageName, className, body) ::= <<
 package <packageName>;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import graphql.schema.GraphQLType;
+
+import javax.inject.Provider;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Configuration
 public class <className> {
-<body>
+   <body>
+   @Lazy
+   @Bean
+   public Map\<String, GraphQLType> graphqlTypeMap(List\<Provider\<? extends GraphQLType>\> typeList) {
+      return typeList.stream().map(Provider::get).collect(Collectors.toMap(GraphQLType::getName, Function.identity()));
+   }
 }
 >>
 
