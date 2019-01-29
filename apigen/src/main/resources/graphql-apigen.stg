@@ -427,3 +427,37 @@ public enum <model.name> {
 }
 
 >>
+
+
+enumTypeProviderFileName(model) ::= "<if(model.enumType)><model.name>TypeProvider.java<endif>"
+enumTypeProviderGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+import graphql.schema.*;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Named;
+
+
+@Named
+public class <model.name>TypeProvider implements Provider\<GraphQLEnumType> {
+    @Override
+    public GraphQLEnumType get() {
+        return GraphQLEnumType.newEnum()
+            .name("<model.name>")
+<model.fields:{ it |
+
+            .value("<it.name>", <model.name>.<it.name>, "<it.name>")}>
+            .build();
+    }
+}
+
+>>
+enumTypeProviderGuiceModule(model) ::= <<
+        types.addBinding("<model.name>")
+             .toProvider(<model.packageName>.<model.name>TypeProvider.class);
+>>
+
