@@ -53,7 +53,9 @@ public class ResolverDataFetcher implements DataFetcher {
 
     public Object replaceResolved(Object result, Iterator<Object> resolved, int depth) {
         if ( depth <= 0 ) {
-            return resolved.next();
+            if(resolved.hasNext())
+               return resolved.next();
+            return result;
         }
         List<Object> resolvedResults = new ArrayList<>();
         if ( null == result ) return null;
