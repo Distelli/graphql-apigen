@@ -35,7 +35,7 @@ public class ApiGenMojo extends AbstractMojo {
     private MavenProject project;
 
     @Parameter(name="sourceDirectory",
-               defaultValue="schema")
+            defaultValue="schema")
     private File sourceDirectory;
 
     @Parameter(name="outputDirectory",
@@ -44,6 +44,9 @@ public class ApiGenMojo extends AbstractMojo {
 
     @Parameter(name="guiceModuleName")
     private String guiceModuleName;
+
+    @Parameter(name="springModuleName")
+    private String springModuleName;
 
     @Parameter(name="defaultPackageName", defaultValue = "com.graphql.generated")
     private String defaultPackageName;
@@ -84,6 +87,7 @@ public class ApiGenMojo extends AbstractMojo {
             ApiGen apiGen = new ApiGen.Builder()
                 .withOutputDirectory(outputDirectory.toPath())
                 .withGuiceModuleName(guiceModuleName)
+                .withSpringModuleName(springModuleName)
                 .withDefaultPackageName(defaultPackageName)
                 .build();
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(cp);
@@ -109,20 +113,20 @@ public class ApiGenMojo extends AbstractMojo {
     }
 
     private interface VisitPath {
-        public void visit(Path path) throws IOException;
+        void visit(Path path) throws IOException;
     }
 
     private void findGraphql(File rootDir, VisitPath visitPath) throws IOException {
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**/*.graphql{,s}");
         Files.walkFileTree(rootDir.toPath(), new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if ( matcher.matches(file) ) {
-                        getLog().debug("Processing "+file);
-                        visitPath.visit(file);
-                    }
-                    return FileVisitResult.CONTINUE;
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                if ( matcher.matches(file) ) {
+                    getLog().debug("Processing "+file);
+                    visitPath.visit(file);
                 }
-            });
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 }

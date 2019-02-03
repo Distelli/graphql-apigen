@@ -1,22 +1,20 @@
 package com.distelli.posts;
 
-import org.junit.Test;
-import graphql.execution.batched.BatchedExecutionStrategy;
-import java.util.*;
-import graphql.schema.*;
-import graphql.ExecutionResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import graphql.GraphQL;
-import com.google.inject.Guice;
-import com.google.inject.Key;
-import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
-import com.google.inject.TypeLiteral;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.google.inject.multibindings.MapBinder;
-import javax.inject.Singleton;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.google.inject.*;
+import graphql.ExecutionResult;
+import graphql.GraphQL;
+import graphql.execution.batched.BatchedExecutionStrategy;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import org.junit.Test;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.Assert.*;
 
 public class PostsTest {
@@ -152,7 +150,7 @@ public class PostsTest {
                   .build());
 
         Injector injector = Guice.createInjector(
-            new PostsModule(),
+//            new PostsModule(),
             new AbstractModule() {
                 @Override
                 protected void configure() {
@@ -166,7 +164,7 @@ public class PostsTest {
                         .toInstance(new QueryPostsImpl(posts));
                 }
             });
-        return injector;
+        return null;
     }
 
     @Test

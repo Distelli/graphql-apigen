@@ -149,8 +149,7 @@ public class <model.name>TypeProvider implements Provider\<GraphQLObjectType> {
 <endif>}>
     @Inject
     private Optional\<<model.name>\> _impl;
-    @Inject
-    protected <model.name>TypeProvider() {}
+
     @Override
     public GraphQLObjectType get() {
         return GraphQLObjectType.newObject()
@@ -200,6 +199,19 @@ objectTypeProviderGuiceModule(model) ::= <<
         OptionalBinder.newOptionalBinder(binder(), <model.packageName>.<model.name>.Resolver.class);
 <endif>
 
+>>
+
+objectTypeProviderSpringModule(model) ::= <<
+    @Bean
+    public <model.packageName>.<model.name>TypeProvider _<model.name>TypeProvider(){
+      return new <model.packageName>.<model.name>TypeProvider();
+    }
+   <if(model.idField)>
+    @Bean
+    public <model.packageName>.<model.name>.Resolver _<model.name>Resolver(){
+      return list -> list;
+    }
+   <endif>
 >>
 
 //////////////////////////////////////////////////////////////////////
@@ -283,8 +295,7 @@ import javax.inject.Named;
 
 @Named
 public class <model.name>TypeProvider implements Provider\<GraphQLInputObjectType> {
-    @Inject
-    protected <model.name>TypeProvider() {}
+
     @Override
     public GraphQLInputObjectType get() {
         return GraphQLInputObjectType.newInputObject()
@@ -310,6 +321,13 @@ inputObjectTypeProviderGuiceModule(model) ::= <<
 
 >>
 
+inputObjectTypeProviderSpringModule(model) ::= <<
+    @Bean
+    public <model.packageName>.<model.name>TypeProvider _<model.name>TypeProvider(){
+      return new <model.packageName>.<model.name>TypeProvider();
+    }
+>>
+
 //////////////////////////////////////////////////////////////////////
 // Define the GuiceModule:
 guiceModule(packageName, className, configure) ::= <<
@@ -327,6 +345,34 @@ public class <className> extends AbstractModule {
     }
 }
 
+>>
+
+//////////////////////////////////////////////////////////////////////
+// Define the SpringModule:
+springModule(packageName, className, body) ::= <<
+package <packageName>;
+
+import org.springframework.context.annotation.Lazy;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import graphql.schema.GraphQLType;
+
+import javax.inject.Provider;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Configuration
+public class <className> {
+   <body>
+   @Lazy
+   @Bean
+   public Map\<String, GraphQLType> graphqlTypeMap(List\<Provider\<? extends GraphQLType>\> typeList) {
+      return typeList.stream().map(Provider::get).collect(Collectors.toMap(GraphQLType::getName, Function.identity()));
+   }
+}
 >>
 
 //////////////////////////////////////////////////////////////////////
@@ -381,3 +427,37 @@ public enum <model.name> {
 }
 
 >>
+
+
+enumTypeProviderFileName(model) ::= "<if(model.enumType)><model.name>TypeProvider.java<endif>"
+enumTypeProviderGenerator(model) ::= <<
+package <model.packageName>;
+
+<model.imports:{ it |
+
+import <it>;}>
+import graphql.schema.*;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Named;
+
+
+@Named
+public class <model.name>TypeProvider implements Provider\<GraphQLEnumType> {
+    @Override
+    public GraphQLEnumType get() {
+        return GraphQLEnumType.newEnum()
+            .name("<model.name>")
+<model.fields:{ it |
+
+            .value("<it.name>", <model.name>.<it.name>, "<it.name>")}>
+            .build();
+    }
+}
+
+>>
+enumTypeProviderGuiceModule(model) ::= <<
+        types.addBinding("<model.name>")
+             .toProvider(<model.packageName>.<model.name>TypeProvider.class);
+>>
+

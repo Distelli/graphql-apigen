@@ -4,11 +4,15 @@
     <maven>3.0</maven>
   </prerequisites>
 
-  <groupId>com.distelli.graphql</groupId>
   <artifactId>graphql-apigen-deps</artifactId>
-  <version>3.0.1-SNAPSHOT</version>
   <name>Dependencies for generated code</name>
   <packaging>jar</packaging>
+
+  <version>${apigen.version}</version>
+
+  <properties>
+    <apigen.version>3.0.1-SNAPSHOT</apigen.version>
+  </properties>
 
   <parent>
     <groupId>com.distelli.graphql</groupId>

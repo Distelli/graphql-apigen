@@ -33,7 +33,7 @@
         <artifactId>graphql-apigen</artifactId>
         <version>${apigen.version}</version>
         <configuration>
-          <guiceModuleName>com.distelli.posts.PostsModule</guiceModuleName>
+          <springModuleName>com.distelli.posts.ConfigureGraphQL</springModuleName>
         </configuration>
         <executions>
           <execution>
@@ -89,6 +89,11 @@
       <groupId>com.google.inject.extensions</groupId>
       <artifactId>guice-multibindings</artifactId>
       <version>4.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>4.3.1.RELEASE</version>
     </dependency>
   </dependencies>
 </project>

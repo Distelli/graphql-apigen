@@ -17,6 +17,16 @@ type QueryPosts @java(package:"com.distelli.posts") {
     posts: [Post]
 }
 
+enum Alphabet @java(package:"com.distelli.posts") {
+   A B C D E F G H I J
+}
+
+enum TRY2 @java(package:"com.distelli.posts") {
+   maybe
+   might
+   iDontKnow
+}
+
 input InputPost @java(package:"com.distelli.posts") {
     title: String
     authorId: Int!
