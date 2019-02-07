@@ -10,13 +10,13 @@
   <version>${apigen.version}</version>
 
   <properties>
-    <apigen.version>3.0.1-SNAPSHOT</apigen.version>
+    <apigen.version>3.0.2</apigen.version>
   </properties>
 
   <parent>
     <groupId>com.distelli.graphql</groupId>
     <artifactId>graphql-apigen-pom</artifactId>
-    <version>3.0.1-SNAPSHOT</version>
+    <version>3.0.0</version>
   </parent>
 
   <url>https://github.com/distelli/graphql-apigen</url>

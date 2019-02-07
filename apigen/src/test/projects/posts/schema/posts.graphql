@@ -28,14 +28,14 @@ enum TRY2 @java(package:"com.distelli.posts") {
 }
 
 input InputPost @java(package:"com.distelli.posts") {
-    title: String
-    authorId: Int!
+    title: String = "MYpOST"
+    authorId: Int! = 5
 }
 
 # this schema allows the following mutation:
 type MutatePosts @java(package:"com.distelli.posts") {
     createPost(post:InputPost): Post
     upvotePost(
-      postId: Int!
+      postId: Int! = 4
     ): Post
 }

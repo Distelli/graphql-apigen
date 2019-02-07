@@ -272,9 +272,10 @@ public interface <model.name> {
         }
         // TODO: equals(Object) & hashCode()
     }
+
 <model.fields:{ it |
 
-    public default <it.type> get<it.ucname>() { return null; \}}>
+    public default <it.type> get<it.ucname>() { return <if(it.defaultValue)><if(it.isStringValue)>"<it.defaultValue>"<else><it.defaultValue><endif><else>null<endif>; \}}>
 }
 
 >>
@@ -306,7 +307,7 @@ public class <model.name>TypeProvider implements Provider\<GraphQLInputObjectTyp
                 .type(<it.graphQLType>)
                 .name("<it.name>")
 <if(it.defaultValue)>
-                .defaultValue(<it.defaultValue>)
+                .defaultValue(<if(it.isStringValue)>"<it.defaultValue>"<else><it.defaultValue><endif>)
 <endif>
                 .build())}>
             .build();

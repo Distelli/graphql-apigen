@@ -1,22 +1,7 @@
 package com.distelli.graphql.apigen;
 
-import graphql.language.Definition;
-import graphql.language.EnumTypeDefinition;
-import graphql.language.EnumValueDefinition;
-import graphql.language.FieldDefinition;
-import graphql.language.InputObjectTypeDefinition;
-import graphql.language.InputValueDefinition;
-import graphql.language.InterfaceTypeDefinition;
-import graphql.language.ListType;
-import graphql.language.NonNullType;
-import graphql.language.ObjectTypeDefinition;
-import graphql.language.OperationTypeDefinition;
-import graphql.language.ScalarTypeDefinition;
-import graphql.language.SchemaDefinition;
-import graphql.language.Type;
-import graphql.language.TypeName;
-import graphql.language.UnionTypeDefinition;
-import graphql.language.Value;
+import graphql.language.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,7 +61,7 @@ public class STModel {
         public String name;
         public String type;
         public String graphQLType;
-        public String defaultValue;
+        public Object defaultValue;
         public Arg(String name, String type) {
             this.name = name;
             this.type = type;
@@ -90,9 +75,10 @@ public class STModel {
         public String name;
         public String type;
         public DataResolver dataResolver;
+        public boolean isStringValue;
         public String graphQLType;
         public List<Arg> args;
-        public String defaultValue;
+        public Object defaultValue;
         public Field(String name, String type) {
             this.name = name;
             this.type = type;
@@ -289,6 +275,11 @@ public class STModel {
             Field field = new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType()));
             field.graphQLType = toGraphQLType(fieldDef.getType());
             field.defaultValue = toJavaValue(fieldDef.getDefaultValue());
+            if(field.defaultValue != null && field.defaultValue instanceof String ) {
+                field.isStringValue = true;
+            }else {
+                field.isStringValue = false;
+            }
             fields.add(field);
         }
         return fields;
@@ -329,7 +320,12 @@ public class STModel {
         return result;
     }
 
-    private String toJavaValue(Value value) {
+    private Object toJavaValue(Value value) {
+        if(value instanceof StringValue){
+            return ((StringValue) value).getValue();
+        }else if(value instanceof IntValue){
+            return ((IntValue) value).getValue();
+        }
         // TODO: Implement me!
         return null;
     }

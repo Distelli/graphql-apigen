@@ -14,7 +14,7 @@
   </modules>
 
   <properties>
-    <apigen.version>3.0.1-SNAPSHOT</apigen.version>
+    <apigen.version>3.0.2</apigen.version>
   </properties>
 
   <build>
