@@ -6,14 +6,14 @@
 
   <groupId>com.distelli.graphql</groupId>
   <artifactId>graphql-apigen</artifactId>
-  <version>4.0.0</version>
+  <version>4.0.1-SNAPSHOT</version>
   <name>Generate Java interfaces given a GraphQL Schema</name>
   <packaging>maven-plugin</packaging>
 
   <parent>
     <groupId>com.distelli.graphql</groupId>
     <artifactId>graphql-apigen-pom</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.1-SNAPSHOT</version>
   </parent>
 
   <url>https://github.com/distelli/graphql-apigen</url>
@@ -129,7 +129,7 @@
     <dependency>
       <groupId>com.distelli.graphql</groupId>
       <artifactId>graphql-apigen-deps</artifactId>
-      <version>4.0.0</version>
+      <version>4.0.1-SNAPSHOT</version>
     </dependency>
   </dependencies>
 </project>

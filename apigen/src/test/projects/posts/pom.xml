@@ -9,7 +9,7 @@
   <name>test-posts</name>
 
   <properties>
-    <apigen.version>4.0.0</apigen.version>
+    <apigen.version>4.0.1-SNAPSHOT</apigen.version>
   </properties>
 
   <build>

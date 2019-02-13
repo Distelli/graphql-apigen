@@ -6,14 +6,14 @@
 
   <groupId>com.distelli.graphql</groupId>
   <artifactId>graphql-apigen-deps</artifactId>
-  <version>4.0.0</version>
+  <version>4.0.1-SNAPSHOT</version>
   <name>Dependencies for generated code</name>
   <packaging>jar</packaging>
 
   <parent>
     <groupId>com.distelli.graphql</groupId>
     <artifactId>graphql-apigen-pom</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.1-SNAPSHOT</version>
   </parent>
 
   <url>https://github.com/distelli/graphql-apigen</url>
