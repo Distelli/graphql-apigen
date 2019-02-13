@@ -2,3 +2,7 @@
 type Base @java(package:"test") {
     base: String
 }
+
+enum Alphabet @java(package:"test") {
+    A B C D E F G H I J
+}
