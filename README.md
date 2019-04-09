@@ -9,9 +9,6 @@ deploy automation tools with audit trails.
 
 The generated code is subject to change (hopefully for the better).
 
-The code is all generated based on [graphql-apigen.stg](apigen/src/main/resources/graphql-apigen.stg),
-and the model input is defined in [STModel.java](apigen/src/main/java/com/distelli/graphql/apigen/STModel.java).
-
 Contributions are welcomed.
 
 ### Posts Example
@@ -282,19 +279,25 @@ Generate the code with the following maven:
         <artifactId>graphql-apigen</artifactId>
         <version>${apigen.version}</version>
         <configuration>
-          <!-- This is only needed when using Guice -->
+          <!-- Optional. This is only needed when using Guice -->
           <guiceModuleName>com.example.my.MyGuiceModule</guiceModuleName>
-          <!-- This is only needed if you omit the @java(package:"...")
+          <!-- Optional. This is only needed if you omit the @java(package:"...")
                annotations from your schema types. Using this feature
                also means your GraphQL schema can NOT be depended upon
                by GraphQL schemas defined in other maven projects. See:
                https://github.com/Distelli/graphql-apigen/issues/5#issuecomment-275923555
           -->
           <defaultPackageName>com.example.my</defaultPackageName>
+          <!-- Optional. Location of your schema file(s). Default is ${project.basedir}/schema. The 
+               expected extension is *.graphql. -->
+          <sourceDirectory>schema/folder</sourceDirectory>
+          <!-- Optional. Output folder for Java source. Default is ${project.basedir}/target/generated-sources/apigen. 
+                -->
+          <outputDirectory>output/folder</outputDirectory>          
         </configuration>
         <executions>
           <execution>
-            <id>why-is-this-needed-who-knows</id>
+            <id>java-apigen</id>
             <goals>
               <goal>apigen</goal>
             </goals>
@@ -331,9 +334,15 @@ Generate the code with the following maven:
 </project>
 ```
 
-Be sure to replace `com.example.*` above with the desired values.
+Be sure to replace the values above with the correct values (and remove unnecessary configuration properties if the 
+defaults are satisfactory).
 
-Place your GraphQL files in `schema/*.graphql`.
+### Customizing the Output
+
+You can customize the generated Java source by copying the [graphql-apigen.stg](apigen/src/main/resources/graphql-apigen.stg) 
+file to the base directory of your project and making any necessary changes. The plugin will automatically use it 
+instead of the one distributed with the library. The template uses the [StringTemplate](https://github.com/antlr/stringtemplate4/blob/master/doc/index.md) 
+template language. The model used for the template is defined in [STModel.java](apigen/src/main/java/com/distelli/graphql/apigen/STModel.java).
 
 #### TODO: Support gradle?
 
