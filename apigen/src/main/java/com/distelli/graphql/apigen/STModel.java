@@ -45,6 +45,7 @@ public class STModel {
             put("Int", "Integer");
             put("ID", "String");
             put("Char", "Character");
+            put("Float", "Double");
         }};
     public static class Builder {
         private TypeEntry typeEntry;
