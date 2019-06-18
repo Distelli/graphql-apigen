@@ -314,7 +314,7 @@ public class STModel {
     private List<Field> getFields(SchemaDefinition def) {
         List<Field> fields = new ArrayList<Field>();
         for ( OperationTypeDefinition fieldDef : def.getOperationTypeDefinitions() ) {
-            fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getType())));
+            fields.add(new Field(fieldDef.getName(), toJavaTypeName(fieldDef.getTypeName())));
         }
         return fields;
     }
@@ -419,7 +419,7 @@ public class STModel {
 
     private void addImports(Collection<String> imports, SchemaDefinition def) {
         for ( OperationTypeDefinition fieldDef : def.getOperationTypeDefinitions() ) {
-            addImports(imports, fieldDef.getType());
+            addImports(imports, fieldDef.getTypeName());
         }
     }
 
