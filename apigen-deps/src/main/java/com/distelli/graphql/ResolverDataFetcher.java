@@ -78,50 +78,52 @@ public class ResolverDataFetcher implements DataFetcher {
     }
 
     public Object getUnbatched(DataFetchingEnvironment env) {
-        if ( ! isBatched ) return fetcher.get(env);
-        DataFetchingEnvironment envCopy =
-            new DataFetchingEnvironmentImpl(
-                Collections.singletonList(env.getSource()),
-                env.getArguments(),
-                env.getContext(),
-                env.getFields(),
-                env.getFieldType(),
-                env.getParentType(),
-                env.getGraphQLSchema(),
-                    env.getFragmentsByName(),
-                    env.getExecutionId(),
-                    env.getSelectionSet());
-        Object result = fetcher.get(envCopy);
-        if ( !(result instanceof List) || ((List)result).size() != 1 ) {
-            throw new IllegalStateException("Batched fetcher "+fetcher+" expected to return list of 1");
+        if ( ! isBatched ) {
+            try {
+                return fetcher.get(env);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         }
-        return ((List)result).get(0);
+        DataFetchingEnvironmentImpl.Builder builder = DataFetchingEnvironmentImpl.newDataFetchingEnvironment(env);
+
+        DataFetchingEnvironment envCopy = builder.build();
+
+        try {
+            Object result = fetcher.get(envCopy);
+            if ( !(result instanceof List) || ((List)result).size() != 1 ) {
+                throw new IllegalStateException("Batched fetcher "+fetcher+" expected to return list of 1");
+            }
+            return ((List)result).get(0);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public List<Object> getBatched(DataFetchingEnvironment env) {
-        List sources = (List)env.getSource();
+        List sources = env.getSource();
         if ( isBatched ) {
-            Object result = fetcher.get(env);
-            if ( !(result instanceof List) || ((List)result).size() != sources.size() ) {
-                throw new IllegalStateException("Batched fetcher "+fetcher+" expected to return list of "+sources.size());
+            try {
+                Object result = fetcher.get(env);
+                if ( !(result instanceof List) || ((List)result).size() != sources.size() ) {
+                    throw new IllegalStateException("Batched fetcher "+fetcher+" expected to return list of "+sources.size());
+                }
+                return (List<Object>)result;
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
             }
-            return (List<Object>)result;
         }
         List<Object> result = new ArrayList<>();
         for ( Object source : sources ) {
-            DataFetchingEnvironment envCopy =
-                new DataFetchingEnvironmentImpl(
-                    source,
-                    env.getArguments(),
-                    env.getContext(),
-                    env.getFields(),
-                    env.getFieldType(),
-                    env.getParentType(),
-                    env.getGraphQLSchema(),
-                        env.getFragmentsByName(),
-                        env.getExecutionId(),
-                        env.getSelectionSet());
-            result.add(fetcher.get(envCopy));
+            DataFetchingEnvironmentImpl.Builder builder = DataFetchingEnvironmentImpl.newDataFetchingEnvironment(env);
+            builder.source(source);
+            DataFetchingEnvironment envCopy = builder.build();
+
+            try {
+                result.add(fetcher.get(envCopy));
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         }
         return result;
     }
