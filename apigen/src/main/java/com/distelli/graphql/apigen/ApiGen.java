@@ -31,12 +31,14 @@ public class ApiGen {
     private Map<String, TypeEntry> generatedTypes = new LinkedHashMap<>();
     private Map<String, TypeEntry> referenceTypes = new HashMap<>();
     private List<TypeEntry> schemaDefinitions = new ArrayList<>();
+    private STModelTransformer transformer;
 
     public static class Builder {
         private Path outputDirectory;
         private STGroup stGroup;
         private String guiceModuleName;
         private String defaultPackageName;
+        private STModelTransformer transformer;
 
         /**
          * (required)
@@ -72,6 +74,11 @@ public class ApiGen {
             return this;
         }
 
+        public Builder withModelTransformer(STModelTransformer transformer) {
+            this.transformer = transformer;
+            return this;
+        }
+
         /**
          * Create a new instances of ApiGen with the built parameters.
          *
@@ -94,6 +101,7 @@ public class ApiGen {
         stGroup = ( null == builder.stGroup )
             ? getDefaultSTGroup()
             : builder.stGroup;
+        transformer = builder.transformer;
     }
 
     /**
@@ -191,6 +199,10 @@ public class ApiGen {
                     .build();
                 model.validate();
 
+                if (transformer != null) {
+                    model = transformer.transform(model);
+                }
+
                 Path directory = getDirectory(entry.getPackageName());
                 for ( String generatorName : generatorNames ) {
                     String fileName = stGroup.getInstanceOf(generatorName+"FileName")
@@ -233,6 +245,10 @@ public class ApiGen {
             this.packageName = packageName;
             this.className = className;
         }
+    }
+
+    public interface STModelTransformer {
+        STModel transform(STModel model);
     }
 
     private PackageClassName getPackageClassName(String fullName) {

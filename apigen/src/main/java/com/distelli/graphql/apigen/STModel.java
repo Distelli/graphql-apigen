@@ -109,7 +109,7 @@ public class STModel {
     private List<String> imports;
     private Field idField;
     private boolean gotIdField = false;
-    private STModel(Builder builder) {
+    protected STModel(Builder builder) {
         this.typeEntry = builder.typeEntry;
         this.referenceTypes = builder.referenceTypes;
     }
@@ -162,6 +162,14 @@ public class STModel {
 
     public String getUcname() {
         return ucFirst(getName());
+    }
+
+    public TypeEntry getTypeEntry() {
+        return this.typeEntry;
+    }
+
+    public Map<String, TypeEntry> getReferenceTypes() {
+        return this.referenceTypes;
     }
 
     private static String ucFirst(String name) {
