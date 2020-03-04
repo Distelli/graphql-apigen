@@ -2,15 +2,6 @@
 
 Generate Java APIs with GraphQL Schemas in order to facilitate "schema first" development.
 
-This project is sponsored by the [Distelli Platform](http://www.distelli.com/). Build and
-deploy automation tools with audit trails.
-
-## NOTE: Work in progress
-
-The generated code is subject to change (hopefully for the better).
-
-Contributions are welcomed.
-
 ### Posts Example
 
 Create a file to define your schema. In this example we are creating the `schema/posts.graphql` file:
@@ -343,8 +334,3 @@ You can customize the generated Java source by copying the [graphql-apigen.stg](
 file to the base directory of your project and making any necessary changes. The plugin will automatically use it 
 instead of the one distributed with the library. The template uses the [StringTemplate](https://github.com/antlr/stringtemplate4/blob/master/doc/index.md) 
 template language. The model used for the template is defined in [STModel.java](apigen/src/main/java/com/distelli/graphql/apigen/STModel.java).
-
-#### TODO: Support gradle?
-
-File an [issue](https://github.com/Distelli/graphql-apigen/issues), or even better
-is to send a pull request :).
